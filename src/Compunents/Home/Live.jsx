@@ -1,0 +1,211 @@
+"use client"
+import React from 'react'
+import { FaLocationDot } from "react-icons/fa6";
+import { GoDotFill } from "react-icons/go";
+import { FaPlus } from "react-icons/fa6";
+import { IoSettingsOutline } from "react-icons/io5";
+import { IoMdLogOut } from "react-icons/io";
+import { TiArrowSortedDown } from "react-icons/ti";
+import { BsThreeDotsVertical } from "react-icons/bs";
+import { Libertinus_Keyboard, Open_Sans } from 'next/font/google';
+import Link from 'next/link';
+import { RiMenuUnfoldFill } from "react-icons/ri";
+import { FiPlus } from "react-icons/fi";
+import { FaMinus } from "react-icons/fa";
+import { MdOutlineRefresh } from "react-icons/md";
+import Map from '@/Compunents/Google_map/Map'
+
+
+// fonts..............................
+const sans = Open_Sans({
+  subsets: ['latin'],
+  weight: ['300', '500']
+})
+// const liver = Libertinus_Keyboard({
+//   subsets: ['latin'],
+//   weight: ['400']
+// })
+
+const Live = () => {
+  return (
+    <section className='bg-[#aaf4e7] p-10 '>
+      {/* mother_div....................................................................... */}
+      <div className="flex container mx-auto border rounded-2xl bg-white  ">
+        {/* left_div ...........................................*/}
+        <div className="p-4 shadow-2xl w-[25%] ">
+          {/* live_icon ,,,,,,,,,,*/}
+          <div className="flex gap-2">
+            <p className='font-bold text-5xl text-blue-500 ' ><FaLocationDot /></p>
+            <div className="">
+              <h4 className={`${sans.className} font-bold text-2xl`}><span className='text-blue-500'>Live</span><span>Map</span></h4>
+              <small className='text-[#8a8f8f] '>Stay Connected, Always</small>
+            </div>
+          </div>
+          {/* my, people & invite_ div ||||||||||||||||||||||||*/}
+          <div className="shadow-xl p-4 rounded-lg ">
+            {/* my_location ,,,,,,,,,,*/}
+            <article className='  border-b pb-4 '>
+              <h4 className='font-bold text-lg flex justify-center text-[#2d3e53] '>My Location</h4>
+
+              <div className="flex gap-4 mt-4">
+                <div className="relative ">
+                  <img className='w-14 h-14 rounded-full  ' src="./live/my/ri_anas.jpg" alt="" />
+                  <p className='absolute top-0 left-10 font-bold text-3xl text-green-500 '> <GoDotFill /> </p>
+
+                </div>
+
+                <div className="">
+                  <p className='font-bold '>Anas Ahmed</p>
+                  <small> Mohangonj, Netrokuna </small>
+                  <p className='flex items-center text-green-500' > <GoDotFill /> Live Now</p>
+                </div>
+
+              </div>
+
+
+            </article>
+
+
+            {/* Pepole(All),,,,,,,,,,,,,,,, */}
+
+            <article className='overflow-y-auto   pt-4 '>
+              <h4 className='font-bold text-lg flex justify-center text-[#2d3e53] '>People(2)</h4>
+
+              <div className="flex gap-4 mt-4">
+                <div className="relative ">
+                  <img className='w-14 h-14 rounded-full  ' src="./live/my/rifa.jpeg" alt="" />
+                  <p className='absolute top-0 left-10 font-bold text-3xl text-green-500 '> <GoDotFill /> </p>
+
+                </div>
+
+                <div className="">
+                  <p className='font-bold '>Rifa Islam</p>
+                  <small> Bancharampur, Brahmanbaria </small>
+                  <p className='flex items-center text-green-500' > <GoDotFill /> Live Now</p>
+                </div>
+
+              </div>
+
+              <div className="flex gap-4 mt-4">
+                <div className="relative ">
+                  <img className='w-14 h-14 rounded-full  ' src="./live/my/anas-light.jpg" alt="" />
+                  <p className='absolute top-0 left-10 font-bold text-3xl text-green-500 '> <GoDotFill /> </p>
+
+                </div>
+
+                <div className="">
+                  <p className='font-bold '>Anas Ahmed</p>
+                  <small> Mohangonj, Netrokuna </small>
+                  <p className='flex items-center text-green-500' > <GoDotFill /> Live Now</p>
+                </div>
+
+              </div>
+
+
+            </article>
+
+
+            {/* invite Pepole,,,,,,,,,,,, */}
+            <div className="flex gap-2 border bg-blue-500 py-4 text-white justify-center items-center rounded-xl mt-12 ">
+              <p><FaPlus /></p>
+              <p>Invite People</p>
+            </div>
+
+          </div>
+
+
+          {/* setting $ logout,,,,,,,,,,,,,,,,,,,, */}
+
+          <div className="flex mt-4 justify-between py-4 ">
+            {/* setting ,,,,,,,,,*/}
+
+            <Link href={"/setting_p"} >
+              <div className="flex items-center gap-2 cursor-pointer ">
+                <p><IoSettingsOutline /></p>
+                <p>Settings </p>
+              </div>
+
+            </Link>
+
+            {/* logout ,,,,,,,,*/}
+            <Link href={"/login_p"} >
+              <div className="flex items-center gap-2 ">
+                <p><IoMdLogOut /> </p>
+                <p>Logout</p>
+              </div>
+
+            </Link>
+          </div>
+
+
+        </div>
+
+        {/* Right_div........................................... */}
+        <div className="w-[75%] ">
+          {/* top ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,*/}
+          <div>            
+
+            <div className="flex items-center gap-2 font-bold justify-end py-4 border-b shadow-xl pr-4 ">
+              <img className='w-10 h-10 rounded-full  ' src="./live/my/ri_anas.jpg" alt="" />
+              <p>Anas Ahmed</p>
+              <p className='cursor-pointer  '><TiArrowSortedDown /></p>
+              <p className='cursor-pointer  '><BsThreeDotsVertical /></p>
+            </div>
+
+          </div>
+          
+         
+          {/* live_map_ ___________________________*/}
+          <div className="relative ">
+            <div className="h-full w-full  ">
+             
+             <Map/>
+
+            </div>
+
+            {/* Setalite_&_All_firend menu_________________ */}
+            {/* <div className="flex items-center justify-between  absolute top-10 z-20 w-full px-10 ">
+              <div className="flex items-center   ">
+                <p className='border py-2 px-4 bg-white font-bold rounded-l-lg cursor-pointer  '>Map</p>
+                <p className='border py-2 px-4 bg-[#dde3e4] rounded-r-lg cursor-pointer  '>Setalite </p>
+              </div>
+
+              <div className="flex items-center cursor-pointer  ">
+                <p className='border py-2 px-4 bg-white  rounded-l-lg '>All Friends</p>
+                <p className='border py-2 px-4 bg-[#dde3e4] rounded-r-lg font-bold text-2xl  '><RiMenuUnfoldFill /> </p>
+              </div>
+            </div> */}
+
+            {/* plus and minus_______________________________ */}
+            {/* <div className="flex items-center justify-between  absolute bottom-10 z-20 w-full px-10  ">
+              <div className=" bg-white  rounded-l-lg cursor-pointer ">
+                <p className='border rounded-t-lg py-3 font-bold px-4 '><FiPlus /> </p>
+                <p className='border rounded-b-lg py-3 px-4   '><FaMinus /> </p>
+
+              </div>
+              
+              <div className="flex items-center  ">
+                <div className="border  px-4 bg-white rounded-l-lg cursor-pointer ">
+                  <small className='font-bold'>Live Updates</small > <br />
+                  <small> Auto-refresh on </small>
+                </div>
+
+                <p className='border py-2 px-4 bg-white text-[32px] rounded-r-lg cursor-pointer '><MdOutlineRefresh /></p>
+
+
+              </div>
+
+            </div> */}
+
+          </div>
+
+
+        </div>
+
+      </div>
+
+    </section>
+  )
+}
+
+export default Live
