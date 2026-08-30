@@ -11,35 +11,29 @@ const Permission = () => {
     // 📍 Browser Geolocation API ব্যবহার করে user's current location-এর permission চাওয়া
     // User "Allow" করলে browser latitude ও longitude আমাদের কাছে পাঠায়
 
-    const handleLocationPermission = () => {
+   const handleLocationPermission = () => {
 
-        navigator.geolocation.getCurrentPosition(
+    console.log("Allow button clicked!");
 
-            (position) => {
+    navigator.geolocation.getCurrentPosition(
 
-                console.log("Location permission allowed");
+        (position) => {
 
-                console.log("Latitude:", position.coords.latitude);
-                console.log("Longitude:", position.coords.longitude);
+            console.log("Location permission allowed");
 
+            console.log("Latitude:", position.coords.latitude);
+            console.log("Longitude:", position.coords.longitude);
 
-                // Location permission সফল হলে LiveMap page-এ নিয়ে যাবে
-                router.push("/home_p");
+            router.push("/home_p");
+        },
 
-            },
+        (error) => {
 
-            (error) => {
+            console.log("Location permission denied/error:", error);
 
-                console.log(
-                    "Location permission denied/error:",
-                    error
-                );
-
-            }
-
-        );
-
-    };
+        }
+    );
+};
 
 
     return (
@@ -65,7 +59,7 @@ const Permission = () => {
                             type="radio"
                             id="location-allow"
                             name="location_permission"
-                            onChange={handleLocationPermission}
+                            onClick={handleLocationPermission}
                         />
 
                         <label htmlFor="location-allow">

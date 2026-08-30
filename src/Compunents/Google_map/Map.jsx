@@ -9,11 +9,76 @@ import {
   useMap,
 } from "react-leaflet";
 
+import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import MyLocationMover from "./MyLocationMover";
+
+
+// =================================================
+// 🔵 CUSTOM MY LOCATION ICON
+// =================================================
+
+const myLocationIcon = L.divIcon({
+
+  className: "",
+
+  html: `
+    <div style="
+      position: relative;
+      width: 55px;
+      height: 55px;
+    ">
+
+      <!-- Profile Image -->
+      <div style="
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        overflow: hidden;
+        border: 3px solid #22c55e;
+        background: white;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+      ">
+
+        <img
+          src="/live/my/ri_anas.jpg"
+          style="
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+          "
+        />
+
+        
+
+      </div>
+
+
+      <!-- 🟢 Live Indicator -->
+      <div style="
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 14px;
+        height: 14px;
+        background: #22c55e;
+        border: 2px solid white;
+        border-radius: 50%;
+      "></div>
+
+    </div>
+  `,
+
+  iconSize: [55, 55],
+  iconAnchor: [27, 27],
+  popupAnchor: [0, -25],
+
+});
 
 
 // Search করার পরে map-কে নতুন location-এ নিয়ে যাবে
 function MapMover({ position }) {
+
   const map = useMap();
 
   if (position) {
@@ -43,46 +108,69 @@ const Map = () => {
   // 📍 MY LOCATION
   // =================================================
 
- // 📍 Real Live Location
-const getMyLocation = () => {
-  if (!navigator.geolocation) {
-    alert("Your browser does not support location.");
-    return;
-  }
+  // 📍 Real Live Location
+  const getMyLocation = () => {
 
-  const watchId = navigator.geolocation.watchPosition(
-    (position) => {
-      const lat = position.coords.latitude;
-      const lng = position.coords.longitude;
+    if (!navigator.geolocation) {
 
-      console.log("Live Latitude:", lat);
-      console.log("Live Longitude:", lng);
+      alert("Your browser does not support location.");
 
-      // নতুন location marker-এ update হবে
-      setMyLocation([lat, lng]);
-    },
+      return;
 
-    (error) => {
-      console.log("Location Error:", error);
-
-      if (error.code === 1) {
-        alert("Please allow location permission.");
-      } else if (error.code === 2) {
-        alert("Location is unavailable.");
-      } else if (error.code === 3) {
-        alert("Location request timed out.");
-      }
-    },
-
-    {
-      enableHighAccuracy: true,
-      maximumAge: 0,
-      timeout: 10000,
     }
-  );
 
-  console.log("Watching location. Watch ID:", watchId);
-};
+
+    const watchId = navigator.geolocation.watchPosition(
+
+      (position) => {
+
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+
+        console.log("Live Latitude:", lat);
+        console.log("Live Longitude:", lng);
+
+
+        // নতুন location marker-এ update হবে
+        setMyLocation([lat, lng]);
+
+      },
+
+
+      (error) => {
+
+        console.log("Location Error:", error);
+
+
+        if (error.code === 1) {
+
+          alert("Please allow location permission.");
+
+        } else if (error.code === 2) {
+
+          alert("Location is unavailable.");
+
+        } else if (error.code === 3) {
+
+          alert("Location request timed out.");
+
+        }
+
+      },
+
+
+      {
+        enableHighAccuracy: true,
+        timeout: 30000,
+        maximumAge: 60000,
+      }
+
+    );
+
+
+    console.log("Watching location. Watch ID:", watchId);
+
+  };
 
 
   // =================================================
@@ -93,36 +181,50 @@ const getMyLocation = () => {
 
     e.preventDefault();
 
+
     if (!search.trim()) {
+
       return;
+
     }
 
+
     setLoading(true);
+
 
     try {
 
       const response = await fetch(
+
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
           search
         )}&limit=1`
+
       );
 
+
       const data = await response.json();
+
 
       if (data.length === 0) {
 
         alert("Location not found.");
+
         return;
 
       }
 
+
       const lat = Number(data[0].lat);
       const lng = Number(data[0].lon);
+
 
       console.log("Search Latitude:", lat);
       console.log("Search Longitude:", lng);
 
+
       setSearchLocation([lat, lng]);
+
 
     } catch (error) {
 
@@ -146,6 +248,7 @@ const getMyLocation = () => {
       style={{ height: "500px" }}
     >
 
+
       {/* =================================================
           🔍 SEARCH BOX
       ================================================= */}
@@ -166,7 +269,9 @@ const getMyLocation = () => {
           type="text"
           placeholder="Search a place..."
           value={search}
+
           onChange={(e) => setSearch(e.target.value)}
+
           style={{
             width: "220px",
             padding: "10px 12px",
@@ -175,14 +280,15 @@ const getMyLocation = () => {
             background: "white",
             color: "#111",
             outline: "none",
-            
-            marginLeft:"50px",
+            marginLeft: "50px",
           }}
         />
+
 
         <button
           type="submit"
           disabled={loading}
+
           style={{
             padding: "10px 15px",
             borderRadius: "8px",
@@ -193,10 +299,13 @@ const getMyLocation = () => {
             fontWeight: "600",
           }}
         >
+
           {loading ? "..." : "Search"}
+
         </button>
 
       </form>
+
 
 
       {/* =================================================
@@ -206,6 +315,7 @@ const getMyLocation = () => {
       <MapContainer
         center={[23.8103, 90.4125]}
         zoom={13}
+
         style={{
           height: "500px",
           width: "100%",
@@ -219,7 +329,11 @@ const getMyLocation = () => {
 
 
         {/* Search করার পরে map move করবে */}
+
         <MapMover position={searchLocation} />
+
+        <MyLocationMover position={myLocation} />
+
 
 
         {/* =================================================
@@ -228,15 +342,18 @@ const getMyLocation = () => {
 
         {myLocation && (
 
-          <Marker position={myLocation}>
+          <Marker
+            position={myLocation}
+            icon={myLocationIcon}
+          >
 
             <Popup>
 
-              <strong>📍 You are here</strong>
+              <strong>📍 Anas Ahmed</strong>
 
               <br />
 
-              Your current location
+              🟢 Live Now
 
             </Popup>
 
@@ -244,7 +361,9 @@ const getMyLocation = () => {
 
         )}
 
+
       </MapContainer>
+
 
 
       {/* =================================================
@@ -253,6 +372,7 @@ const getMyLocation = () => {
 
       <button
         onClick={getMyLocation}
+
         style={{
           position: "absolute",
           bottom: "20px",
@@ -268,12 +388,17 @@ const getMyLocation = () => {
           fontWeight: "600",
         }}
       >
+
         📍 My Location
+
       </button>
+
 
     </div>
 
   );
+
 };
+
 
 export default Map;
