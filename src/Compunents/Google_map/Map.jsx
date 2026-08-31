@@ -123,17 +123,14 @@ const Map = () => {
     const watchId = navigator.geolocation.watchPosition(
 
       (position) => {
-
         const lat = position.coords.latitude;
         const lng = position.coords.longitude;
 
-        console.log("Live Latitude:", lat);
-        console.log("Live Longitude:", lng);
+        console.log("REAL LOCATION:");
+        console.log("Latitude:", lat);
+        console.log("Longitude:", lng);
 
-
-        // নতুন location marker-এ update হবে
         setMyLocation([lat, lng]);
-
       },
 
 

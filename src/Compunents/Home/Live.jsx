@@ -1,5 +1,8 @@
 "use client"
-import React from 'react'
+import React, { useEffect, useState } from 'react'
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "@/firebase/firebaseConfig";
+
 import { FaLocationDot } from "react-icons/fa6";
 import { GoDotFill } from "react-icons/go";
 import { FaPlus } from "react-icons/fa6";
@@ -27,6 +30,105 @@ const sans = Open_Sans({
 // })
 
 const Live = () => {
+  // Google user__________________________________________________
+  const [user, setUser] = useState(null);
+  // Real location_______________________________________________
+  const [myLocation, setMyLocation] = useState(null);
+  const [placeName, setPlaceName] = useState("Getting location...");
+
+  // Google_user__________________________________________________________
+
+  useEffect(() => {
+
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+
+      if (currentUser) {
+
+        setUser(currentUser);
+
+        console.log("User Name:", currentUser.displayName);
+        console.log("User Photo:", currentUser.photoURL);
+
+      }
+
+    });
+
+    return () => unsubscribe();
+
+  }, []);
+
+  // Real_Location_______________________________________________________
+
+  useEffect(() => {
+
+    if (!navigator.geolocation) {
+      console.log("Geolocation is not supported");
+      return;
+    }
+
+    const watchId = navigator.geolocation.watchPosition(
+
+      async (position) => {
+
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+
+        console.log("Latitude:", lat);
+        console.log("Longitude:", lng);
+
+        // Latitude + Longitude save
+        setMyLocation({
+          lat: lat,
+          lng: lng,
+        });
+
+
+        // Latitude + Longitude থেকে real place name বের করা
+        try {
+
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`
+          );
+
+          const data = await response.json();
+
+          console.log("Location Details:", data);
+
+          if (data.display_name) {
+            setPlaceName(data.display_name);
+          }
+
+        } catch (error) {
+
+          console.error("Place Name Error:", error);
+
+          setPlaceName("Location unavailable");
+
+        }
+
+      },
+
+      (error) => {
+
+        console.log("Location Error:", error);
+
+      },
+
+      {
+        enableHighAccuracy: true,
+        timeout: 30000,
+        maximumAge: 60000,
+      }
+
+    );
+
+    return () => {
+      navigator.geolocation.clearWatch(watchId);
+    };
+
+  }, []);
+
+
   return (
     <section className='bg-[#aaf4e7] p-10 '>
       {/* mother_div....................................................................... */}
@@ -49,14 +151,32 @@ const Live = () => {
 
               <div className="flex gap-4 mt-4">
                 <div className="relative ">
-                  <img className='w-14 h-14 rounded-full  ' src="./live/my/ri_anas.jpg" alt="" />
+                  {/* MY_Live_Img_________________________________________
+                  ________________________________________________________ */}
+                  <img
+                    className='w-14 h-14 rounded-full'
+                    src={user?.photoURL || "./live/my/ri_anas.jpg"}
+                    alt={user?.displayName || "User"}
+                  />
                   <p className='absolute top-0 left-10 font-bold text-3xl text-green-500 '> <GoDotFill /> </p>
 
                 </div>
 
+
                 <div className="">
-                  <p className='font-bold '>Anas Ahmed</p>
-                  <small> Mohangonj, Netrokuna </small>
+                  {/* User_Name__________________________________________
+                  ___________________________________________________ */}
+                  <p className='font-bold '>
+                    {user?.displayName || "User"}
+                  </p>
+                  {/* Real_Location_place_Name___________________________________________
+                  ___________________________________________________________________ */}
+                  <div className="w-[150px] h-[40px] overflow-y-auto">
+                    <small className="text-gray-600">
+                      {placeName}
+                    </small>
+                  </div>
+
                   <p className='flex items-center text-green-500' > <GoDotFill /> Live Now</p>
                 </div>
 
@@ -143,7 +263,7 @@ const Live = () => {
         {/* Right_div........................................... */}
         <div className="w-[75%] ">
           {/* top ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,*/}
-          <div>            
+          <div>
 
             <div className="flex items-center gap-2 font-bold justify-end py-4 border-b shadow-xl pr-4 ">
               <img className='w-10 h-10 rounded-full  ' src="./live/my/ri_anas.jpg" alt="" />
@@ -153,13 +273,13 @@ const Live = () => {
             </div>
 
           </div>
-          
-         
+
+
           {/* live_map_ ___________________________*/}
           <div className="relative ">
             <div className="h-full w-full  ">
-             
-             <Map/>
+
+              <Map />
 
             </div>
 
