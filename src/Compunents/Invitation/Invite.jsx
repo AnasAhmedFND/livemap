@@ -14,13 +14,16 @@ const Invite = ({ onClose }) => {
   const [loading, setLoading] = useState(false);
 
 
+  // Send Invitation Function
   const handleSendInvitation = async () => {
 
+    // Email empty কিনা check
     if (!email.trim()) {
       alert("Please enter your friend's email.");
       return;
     }
 
+    // User login করেছে কিনা check
     if (!auth.currentUser) {
       alert("User is not logged in.");
       return;
@@ -32,6 +35,7 @@ const Invite = ({ onClose }) => {
 
       const user = auth.currentUser;
 
+      // 🔥 Firebase Firestore-এ invitation save হবে
       await addDoc(collection(db, "invitations"), {
 
         fromUid: user.uid,
@@ -47,6 +51,9 @@ const Invite = ({ onClose }) => {
         createdAt: serverTimestamp(),
 
       });
+
+
+      console.log("Invitation sent successfully!");
 
       alert("Invitation sent successfully! ✅");
 
@@ -70,7 +77,6 @@ const Invite = ({ onClose }) => {
 
 
   return (
-
     <div className="fixed inset-0 z-[2000] bg-black/50 flex items-center justify-center">
 
       <div className="relative w-[500px] bg-white text-black rounded-2xl py-10 px-8 shadow-2xl">
@@ -96,7 +102,6 @@ const Invite = ({ onClose }) => {
         </div>
 
 
-        {/* Description */}
         <p className="mt-5 text-center text-gray-600">
 
           Add people you care about <br />
@@ -130,13 +135,11 @@ const Invite = ({ onClose }) => {
         </button>
 
 
-        {/* OR */}
         <p className="mt-4 text-center text-gray-400">
           ───────── OR ─────────
         </p>
 
 
-        {/* Invite Link */}
         <button
           className="mt-3 w-full text-blue-500 cursor-pointer"
         >
@@ -146,7 +149,6 @@ const Invite = ({ onClose }) => {
       </div>
 
     </div>
-
   );
 };
 

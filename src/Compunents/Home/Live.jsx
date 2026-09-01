@@ -18,6 +18,7 @@ import { FaMinus } from "react-icons/fa";
 import { MdOutlineRefresh } from "react-icons/md";
 import Map from '@/Compunents/Google_map/Map'
 import Invite from '../Invitation/Invite';
+import Invitationcard from '../Invitation/InvitationCard';
 
 
 // fonts..............................
@@ -193,6 +194,9 @@ const Live = () => {
 
 
               </article>
+
+              {/* invitation_card_______________________________ */}
+              <Invitationcard />
 
 
               {/* Pepole(All),,,,,,,,,,,,,,,, */}
