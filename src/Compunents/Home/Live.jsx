@@ -1,7 +1,7 @@
 "use client"
 import React, { useEffect, useState } from 'react'
 import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "@/firebase/firebaseConfig";
+import { auth, db } from "@/firebase/firebaseConfig";
 
 import { FaLocationDot } from "react-icons/fa6";
 import { GoDotFill } from "react-icons/go";
@@ -18,7 +18,18 @@ import { FaMinus } from "react-icons/fa";
 import { MdOutlineRefresh } from "react-icons/md";
 import Map from '@/Compunents/Google_map/Map'
 import Invite from '../Invitation/Invite';
-import Invitationcard from '../Invitation/InvitationCard';
+import InvitationCard from '../Invitation/InvitationCard';
+
+import {
+  collection,
+  onSnapshot,
+  query,
+  where
+} from "firebase/firestore";
+
+
+
+
 
 
 // fonts..............................
@@ -41,7 +52,13 @@ const Live = () => {
   // invite friend_________________________________________________
   const [showInvite, setShowInvite] = useState(false);
 
-  // Google_user__________________________________________________________
+  // Invitationcard_call__________________________________________
+  const [invitation, setInvitation] = useState(null);
+
+  // All_People_Add_______________________________________________
+  const [connection, setConnection] = useState(null);
+
+  // Google_user________________________________________________________________
 
   useEffect(() => {
 
@@ -62,9 +79,7 @@ const Live = () => {
 
   }, []);
 
-  // Real_Location_______________________________________________________
-
-  // Real Location _______________________________________________
+  // Real_Location______________________________________________________________
 
   useEffect(() => {
 
@@ -138,6 +153,104 @@ const Live = () => {
 
   }, []);
 
+  // Firebase থেকে invitation receive___________________________________________
+
+  useEffect(() => {
+
+    if (!user?.email) return;
+
+    const q = query(
+      collection(db, "invitations"),
+      where("toEmail", "==", user.email),
+      where("status", "==", "pending")
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+
+      if (!snapshot.empty) {
+
+        const doc = snapshot.docs[0];
+
+        setInvitation({
+          id: doc.id,
+          ...doc.data(),
+        });
+
+        console.log("Invitation received:", doc.data());
+
+      } else {
+
+        setInvitation(null);
+
+        console.log("No pending invitation");
+
+      }
+
+    });
+
+    return () => unsubscribe();
+
+  }, [user]);
+
+  // Firebase থেকে connection_People_Add_________________________________________
+  useEffect(() => {
+    if (!user?.uid) return;
+
+    const q = query(
+      collection(db, "connections"),
+      where("user1Uid", "==", user.uid)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+
+      if (!snapshot.empty) {
+
+        const doc = snapshot.docs[0];
+
+        setConnection({
+          id: doc.id,
+          ...doc.data(),
+        });
+
+        console.log("Connection found:", doc.data());
+
+      } else {
+
+        // User যদি user1 না হয়ে user2 হয়
+        const q2 = query(
+          collection(db, "connections"),
+          where("user2Uid", "==", user.uid)
+        );
+
+        const unsubscribe2 = onSnapshot(q2, (snapshot2) => {
+
+          if (!snapshot2.empty) {
+
+            const doc = snapshot2.docs[0];
+
+            setConnection({
+              id: doc.id,
+              ...doc.data(),
+            });
+
+            console.log("Connection found:", doc.data());
+
+          } else {
+            setConnection(null);
+            console.log("No connection found");
+          }
+
+        });
+
+        return () => unsubscribe2();
+      }
+
+    });
+
+    return () => unsubscribe();
+
+  }, [user]);
+
 
   return (
     <>
@@ -195,45 +308,65 @@ const Live = () => {
 
               </article>
 
-              {/* invitation_card_______________________________ */}
-              <Invitationcard />
+              {/* invitation_card____________________________________________ */}
+
+              {invitation && (
+                <InvitationCard invitation={invitation} />
+              )}
+
 
 
               {/* Pepole(All),,,,,,,,,,,,,,,, */}
 
-              <article className='overflow-y-auto   pt-4 '>
-                <h4 className='font-bold text-lg flex justify-center text-[#2d3e53] '>People(2)</h4>
+              <article className='overflow-y-auto pt-4'>
 
-                <div className="flex gap-4 mt-4">
-                  <div className="relative ">
-                    <img className='w-14 h-14 rounded-full  ' src="./live/my/rifa.jpeg" alt="" />
-                    <p className='absolute top-0 left-10 font-bold text-3xl text-green-500 '> <GoDotFill /> </p>
+                <h4 className='font-bold text-lg flex justify-center text-[#2d3e53]'>
+                  People({connection ? 1 : 0})
+                </h4>
+
+                {connection && (
+
+                  <div className="flex gap-4 mt-4">
+
+                    <div className="relative">
+
+                      <img
+                        className='w-14 h-14 rounded-full'
+                        src={
+                          connection.user1Uid === user?.uid
+                            ? connection.user2Photo
+                            : connection.user1Photo
+                        }
+                        alt=""
+                      />
+
+                      <p className='absolute top-0 left-10 font-bold text-3xl text-green-500'>
+                        <GoDotFill />
+                      </p>
+
+                    </div>
+
+                    <div>
+
+                      <p className='font-bold'>
+                        {connection.user1Uid === user?.uid
+                          ? connection.user2Name
+                          : connection.user1Name}
+                      </p>
+
+                      <small>
+                        Location loading...
+                      </small>
+
+                      <p className='flex items-center text-green-500'>
+                        <GoDotFill /> Live Now
+                      </p>
+
+                    </div>
 
                   </div>
 
-                  <div className="">
-                    <p className='font-bold '>Rifa Islam</p>
-                    <small> Bancharampur, Brahmanbaria </small>
-                    <p className='flex items-center text-green-500' > <GoDotFill /> Live Now</p>
-                  </div>
-
-                </div>
-
-                <div className="flex gap-4 mt-4">
-                  <div className="relative ">
-                    <img className='w-14 h-14 rounded-full  ' src="./live/my/anas-light.jpg" alt="" />
-                    <p className='absolute top-0 left-10 font-bold text-3xl text-green-500 '> <GoDotFill /> </p>
-
-                  </div>
-
-                  <div className="">
-                    <p className='font-bold '>Anas Ahmed</p>
-                    <small> Mohangonj, Netrokuna </small>
-                    <p className='flex items-center text-green-500' > <GoDotFill /> Live Now</p>
-                  </div>
-
-                </div>
-
+                )}
 
               </article>
 
