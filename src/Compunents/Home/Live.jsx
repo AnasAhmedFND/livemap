@@ -24,7 +24,9 @@ import {
   collection,
   onSnapshot,
   query,
-  where
+  where,
+  setDoc,
+  doc
 } from "firebase/firestore";
 
 
@@ -58,6 +60,9 @@ const Live = () => {
   // All_People_Add_______________________________________________
   const [connection, setConnection] = useState(null);
 
+  // friendLocation_______________________________________________
+  const [friendLocation, setFriendLocation] = useState(null);
+
   // Google_user________________________________________________________________
 
   useEffect(() => {
@@ -90,7 +95,7 @@ const Live = () => {
 
     const watchId = navigator.geolocation.watchPosition(
 
-      (position) => {
+      async (position) => {
 
         const lat = position.coords.latitude;
         const lng = position.coords.longitude;
@@ -109,6 +114,33 @@ const Live = () => {
             lng: lng,
             accuracy: accuracy,
           });
+
+          // Firebase-এ নিজের location save
+          if (auth.currentUser) {
+
+            try {
+
+              await setDoc(
+                doc(db, "locations", auth.currentUser.uid),
+                {
+                  uid: auth.currentUser.uid,
+                  lat: lat,
+                  lng: lng,
+                  accuracy: accuracy,
+                  updatedAt: new Date(),
+                },
+                { merge: true }
+              );
+
+              console.log("Location saved to Firebase ✅");
+
+            } catch (error) {
+
+              console.error("Location save error:", error);
+
+            }
+
+          }
 
         }
 
@@ -135,10 +167,8 @@ const Live = () => {
       {
         enableHighAccuracy: true,
 
-        // সর্বোচ্চ 10 seconds অপেক্ষা করবে
         timeout: 10000,
 
-        // 5 seconds-এর বেশি পুরোনো location ব্যবহার করবে না
         maximumAge: 5000,
       }
 
@@ -146,7 +176,6 @@ const Live = () => {
 
     console.log("Watching location. Watch ID:", watchId);
 
-    // Component বন্ধ হলে location tracking বন্ধ করবে
     return () => {
       navigator.geolocation.clearWatch(watchId);
     };
@@ -250,6 +279,75 @@ const Live = () => {
     return () => unsubscribe();
 
   }, [user]);
+
+  // =================================================
+  // 🟣 FRIEND REALTIME LOCATION
+  // =================================================
+
+  useEffect(() => {
+
+    if (!user || !connection) {
+      setFriendLocation(null);
+      return;
+    }
+
+    const friendUid =
+      connection.user1Uid === user.uid
+        ? connection.user2Uid
+        : connection.user1Uid;
+
+    if (!friendUid) {
+      return;
+    }
+
+    console.log("Listening to friend location:", friendUid);
+
+    const locationRef = doc(
+      db,
+      "locations",
+      friendUid
+    );
+
+    const unsubscribe = onSnapshot(
+      locationRef,
+
+      (snapshot) => {
+
+        if (snapshot.exists()) {
+
+          const data = snapshot.data();
+
+          console.log("Friend location:", data);
+
+          setFriendLocation({
+            lat: data.lat,
+            lng: data.lng,
+            accuracy: data.accuracy,
+          });
+
+        } else {
+
+          console.log("Friend location not found");
+
+          setFriendLocation(null);
+
+        }
+
+      },
+
+      (error) => {
+
+        console.error(
+          "Friend location listener error:",
+          error
+        );
+
+      }
+    );
+
+    return () => unsubscribe();
+
+  }, [user, connection]);
 
 
   return (
@@ -428,7 +526,24 @@ const Live = () => {
             <div className="relative ">
               <div className="h-full w-full  ">
 
-                <Map />
+                <Map
+                  myPhoto={user?.photoURL}
+                  myName={user?.displayName}
+
+                  friendLocation={friendLocation}
+
+                  friendPhoto={
+                    connection?.user1Uid === user?.uid
+                      ? connection?.user2Photo
+                      : connection?.user1Photo
+                  }
+
+                  friendName={
+                    connection?.user1Uid === user?.uid
+                      ? connection?.user2Name
+                      : connection?.user1Name
+                  }
+                />
 
               </div>
 

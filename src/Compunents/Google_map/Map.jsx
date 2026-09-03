@@ -18,62 +18,115 @@ import MyLocationMover from "./MyLocationMover";
 // 🔵 CUSTOM MY LOCATION ICON
 // =================================================
 
-const myLocationIcon = L.divIcon({
+const createMyLocationIcon = (photo) =>
+  L.divIcon({
 
-  className: "",
+    className: "",
 
-  html: `
-    <div style="
-      position: relative;
-      width: 55px;
-      height: 55px;
-    ">
-
-      <!-- Profile Image -->
+    html: `
       <div style="
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
-        overflow: hidden;
-        border: 3px solid #22c55e;
-        background: white;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+        position: relative;
+        width: 55px;
+        height: 55px;
       ">
 
-        <img
-          src="/live/my/ri_anas.jpg"
-          style="
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-          "
-        />
+        <div style="
+          width: 50px;
+          height: 50px;
+          border-radius: 50%;
+          overflow: hidden;
+          border: 3px solid #22c55e;
+          background: white;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+        ">
 
-        
+          <img
+            src="${photo || ""}"
+            style="
+              width: 100%;
+              height: 100%;
+              object-fit: cover;
+            "
+          />
+
+        </div>
+
+        <div style="
+          position: absolute;
+          top: 0;
+          right: 0;
+          width: 14px;
+          height: 14px;
+          background: #22c55e;
+          border: 2px solid white;
+          border-radius: 50%;
+        "></div>
 
       </div>
+    `,
 
+    iconSize: [55, 55],
+    iconAnchor: [27, 27],
+    popupAnchor: [0, -25],
 
-      <!-- 🟢 Live Indicator -->
+  });
+
+// =================================================
+// 🟣 CUSTOM FRIEND LOCATION ICON
+// =================================================
+
+const createFriendIcon = (photo) =>
+  L.divIcon({
+
+    className: "",
+
+    html: `
       <div style="
-        position: absolute;
-        top: 0;
-        right: 0;
-        width: 14px;
-        height: 14px;
-        background: #22c55e;
-        border: 2px solid white;
-        border-radius: 50%;
-      "></div>
+        position: relative;
+        width: 55px;
+        height: 55px;
+      ">
 
-    </div>
-  `,
+        <div style="
+          width: 50px;
+          height: 50px;
+          border-radius: 50%;
+          overflow: hidden;
+          border: 3px solid #3b82f6;
+          background: white;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+        ">
 
-  iconSize: [55, 55],
-  iconAnchor: [27, 27],
-  popupAnchor: [0, -25],
+          <img
+            src="${photo || ""}"
+            style="
+              width: 100%;
+              height: 100%;
+              object-fit: cover;
+            "
+          />
 
-});
+        </div>
+
+        <div style="
+          position: absolute;
+          top: 0;
+          right: 0;
+          width: 14px;
+          height: 14px;
+          background: #22c55e;
+          border: 2px solid white;
+          border-radius: 50%;
+        "></div>
+
+      </div>
+    `,
+
+    iconSize: [55, 55],
+    iconAnchor: [27, 27],
+    popupAnchor: [0, -25],
+
+  });
 
 
 // Search করার পরে map-কে নতুন location-এ নিয়ে যাবে
@@ -88,8 +141,9 @@ function MapMover({ position }) {
   return null;
 }
 
-
-const Map = () => {
+//  props--------------------------------------------------------------------
+//  -------------------------------------------------------------------------  
+const Map = ({ friendLocation, friendPhoto, friendName, myPhoto, myName }) => {
 
   // নিজের location রাখবে
   const [myLocation, setMyLocation] = useState(null);
@@ -341,12 +395,41 @@ const Map = () => {
 
           <Marker
             position={myLocation}
-            icon={myLocationIcon}
+            icon={createMyLocationIcon(myPhoto)}
           >
 
             <Popup>
 
-              <strong>📍 Anas Ahmed</strong>
+              <strong>📍 {myName || "You"}</strong>
+
+              <br />
+
+              🟢 Live Now
+
+            </Popup>
+
+          </Marker>
+
+        )}
+
+
+        {/* =================================================
+          🟣 FRIEND LOCATION MARKER
+          ================================================= */}
+
+        {friendLocation && (
+
+          <Marker
+            position={[
+              friendLocation.lat,
+              friendLocation.lng
+            ]}
+            icon={createFriendIcon(friendPhoto)}
+          >
+
+            <Popup>
+
+              <strong>📍 {friendName || "Friend"}</strong>
 
               <br />
 
