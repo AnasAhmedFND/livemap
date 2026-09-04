@@ -49,7 +49,7 @@ const Live = () => {
   const [user, setUser] = useState(null);
   // Real location_______________________________________________
   const [myLocation, setMyLocation] = useState(null);
-  const [placeName, setPlaceName] = useState("Getting location...");
+
 
   // invite friend_________________________________________________
   const [showInvite, setShowInvite] = useState(false);
@@ -62,6 +62,63 @@ const Live = () => {
 
   // friendLocation_______________________________________________
   const [friendLocation, setFriendLocation] = useState(null);
+
+  const [myPlaceName, setMyPlaceName] = useState("Getting location...");
+  const [friendPlaceName, setFriendPlaceName] = useState("Location loading...");
+
+
+  // =================================================
+  // 📍 GET REAL PLACE NAME
+  // =================================================
+
+  const getPlaceName = async (lat, lng) => {
+
+    try {
+
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=14&addressdetails=1`
+      );
+
+      const data = await response.json();
+
+      if (!data || !data.address) {
+        return "Location unavailable";
+      }
+
+      const address = data.address;
+
+      const place =
+        address.city ||
+        address.town ||
+        address.municipality ||
+        address.village ||
+        address.suburb ||
+        address.neighbourhood;
+
+      const district =
+        address.state_district ||
+        address.county ||
+        address.state;
+
+      if (place && district) {
+        return `${place}, ${district}`;
+      }
+
+      if (place) {
+        return place;
+      }
+
+      return data.display_name || "Unknown location";
+
+    } catch (error) {
+
+      console.error("Place name error:", error);
+
+      return "Location unavailable";
+
+    }
+
+  };
 
   // Google_user________________________________________________________________
 
@@ -84,7 +141,7 @@ const Live = () => {
 
   }, []);
 
-  // Real_Location______________________________________________________________
+  // MY_Real_Location______________________________________________________________
 
   useEffect(() => {
 
@@ -114,6 +171,25 @@ const Live = () => {
             lng: lng,
             accuracy: accuracy,
           });
+
+          // 📍 Get my real place name
+          console.log("🔵 MY LOCATION → Getting place name...");
+
+          getPlaceName(lat, lng)
+            .then((place) => {
+
+              console.log("🔵 MY PLACE NAME RESULT:", place);
+
+              setMyPlaceName(place);
+
+            })
+            .catch((error) => {
+
+              console.error("🔴 MY PLACE NAME ERROR:", error);
+
+              setMyPlaceName("Location unavailable");
+
+            });
 
           // Firebase-এ নিজের location save
           if (auth.currentUser) {
@@ -222,6 +298,7 @@ const Live = () => {
   }, [user]);
 
   // Firebase থেকে connection_People_Add_________________________________________
+
   useEffect(() => {
     if (!user?.uid) return;
 
@@ -325,6 +402,13 @@ const Live = () => {
             accuracy: data.accuracy,
           });
 
+          // 📍 Get friend's real place name
+          getPlaceName(data.lat, data.lng).then((place) => {
+
+            setFriendPlaceName(place);
+
+          });
+
         } else {
 
           console.log("Friend location not found");
@@ -395,8 +479,8 @@ const Live = () => {
                     </p>
                     {/* Real_Location_place_Name___________________________________________
                   ___________________________________________________________________ */}
-                    <small > {placeName}
-                    </small>
+
+                    <small>{myPlaceName}</small>
 
                     <p className='flex items-center text-green-500' > <GoDotFill /> Live Now</p>
                   </div>
@@ -451,10 +535,9 @@ const Live = () => {
                           ? connection.user2Name
                           : connection.user1Name}
                       </p>
+                      {/* friend_map_Place-name_________________________________________ */}
 
-                      <small>
-                        Location loading...
-                      </small>
+                      <small> {friendPlaceName} </small>
 
                       <p className='flex items-center text-green-500'>
                         <GoDotFill /> Live Now

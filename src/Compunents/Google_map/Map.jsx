@@ -18,7 +18,11 @@ import MyLocationMover from "./MyLocationMover";
 // 🔵 CUSTOM MY LOCATION ICON
 // =================================================
 
-const createMyLocationIcon = (photo) =>
+// =================================================
+// 🟢 MY LOCATION ICON
+// =================================================
+
+const createMyLocationIcon = (photo, name) =>
   L.divIcon({
 
     className: "",
@@ -26,48 +30,92 @@ const createMyLocationIcon = (photo) =>
     html: `
       <div style="
         position: relative;
-        width: 55px;
-        height: 55px;
+        width: 150px;
+        height: 105px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
       ">
 
+        <!-- Profile Image -->
         <div style="
-          width: 50px;
-          height: 50px;
+          position: relative;
+          width: 58px;
+          height: 58px;
           border-radius: 50%;
           overflow: hidden;
           border: 3px solid #22c55e;
           background: white;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+          box-shadow: 0 3px 10px rgba(0,0,0,0.30);
+          z-index: 2;
         ">
 
           <img
             src="${photo || ""}"
+            alt=""
             style="
               width: 100%;
               height: 100%;
               object-fit: cover;
+              display: block;
             "
           />
 
         </div>
 
+
+        <!-- 🟢 Live Dot -->
         <div style="
           position: absolute;
-          top: 0;
-          right: 0;
-          width: 14px;
-          height: 14px;
+          top: 43px;
+          right: 42px;
+          width: 15px;
+          height: 15px;
           background: #22c55e;
           border: 2px solid white;
           border-radius: 50%;
+          z-index: 3;
         "></div>
+
+
+        <!-- Pin Point -->
+        <div style="
+          width: 0;
+          height: 0;
+          border-left: 9px solid transparent;
+          border-right: 9px solid transparent;
+          border-top: 12px solid #22c55e;
+          margin-top: -1px;
+          z-index: 1;
+        "></div>
+
+
+        <!-- Name -->
+        <div style="
+          margin-top: 4px;
+          padding: 6px 12px;
+          background: white;
+          border: 2px solid #22c55e;
+          border-radius: 9px;
+          box-shadow: 0 3px 10px rgba(0,0,0,0.20);
+          color: #111827;
+          font-size: 14px;
+          font-weight: 700;
+          white-space: nowrap;
+          line-height: 18px;
+        ">
+          ${name || "You"}
+        </div>
 
       </div>
     `,
 
-    iconSize: [55, 55],
-    iconAnchor: [27, 27],
-    popupAnchor: [0, -25],
+    iconSize: [150, 105],
+
+    // GPS location থাকবে pin-এর মাথায়
+    iconAnchor: [75, 70],
+
+    popupAnchor: [0, -65],
 
   });
 
@@ -75,7 +123,11 @@ const createMyLocationIcon = (photo) =>
 // 🟣 CUSTOM FRIEND LOCATION ICON
 // =================================================
 
-const createFriendIcon = (photo) =>
+// =================================================
+// 🔵 FRIEND LOCATION ICON
+// =================================================
+
+const createFriendIcon = (photo, name) =>
   L.divIcon({
 
     className: "",
@@ -83,48 +135,91 @@ const createFriendIcon = (photo) =>
     html: `
       <div style="
         position: relative;
-        width: 55px;
-        height: 55px;
+        width: 150px;
+        height: 105px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
       ">
 
+        <!-- Profile Image -->
         <div style="
-          width: 50px;
-          height: 50px;
+          position: relative;
+          width: 58px;
+          height: 58px;
           border-radius: 50%;
           overflow: hidden;
           border: 3px solid #3b82f6;
           background: white;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+          box-shadow: 0 3px 10px rgba(0,0,0,0.30);
+          z-index: 2;
         ">
 
           <img
             src="${photo || ""}"
+            alt=""
             style="
               width: 100%;
               height: 100%;
               object-fit: cover;
+              display: block;
             "
           />
 
         </div>
 
+
+        <!-- 🔵 Live Dot -->
         <div style="
           position: absolute;
-          top: 0;
-          right: 0;
-          width: 14px;
-          height: 14px;
+          top: 43px;
+          right: 42px;
+          width: 15px;
+          height: 15px;
           background: #22c55e;
           border: 2px solid white;
           border-radius: 50%;
+          z-index: 3;
         "></div>
+
+
+        <!-- Pin Point -->
+        <div style="
+          width: 0;
+          height: 0;
+          border-left: 9px solid transparent;
+          border-right: 9px solid transparent;
+          border-top: 12px solid #3b82f6;
+          margin-top: -1px;
+          z-index: 1;
+        "></div>
+
+
+        <!-- Name -->
+        <div style="
+          margin-top: 4px;
+          padding: 6px 12px;
+          background: white;
+          border: 2px solid #3b82f6;
+          border-radius: 9px;
+          box-shadow: 0 3px 10px rgba(0,0,0,0.20);
+          color: #111827;
+          font-size: 14px;
+          font-weight: 700;
+          white-space: nowrap;
+          line-height: 18px;
+        ">
+          ${name || "Friend"}
+        </div>
 
       </div>
     `,
 
-    iconSize: [55, 55],
-    iconAnchor: [27, 27],
-    popupAnchor: [0, -25],
+    iconSize: [150, 105],
+
+    iconAnchor: [75, 70],
+
+    popupAnchor: [0, -65],
 
   });
 
@@ -395,7 +490,7 @@ const Map = ({ friendLocation, friendPhoto, friendName, myPhoto, myName }) => {
 
           <Marker
             position={myLocation}
-            icon={createMyLocationIcon(myPhoto)}
+            icon={createMyLocationIcon(myPhoto, myName)}
           >
 
             <Popup>
@@ -424,7 +519,7 @@ const Map = ({ friendLocation, friendPhoto, friendName, myPhoto, myName }) => {
               friendLocation.lat,
               friendLocation.lng
             ]}
-            icon={createFriendIcon(friendPhoto)}
+            icon={createFriendIcon(friendPhoto, friendName)}
           >
 
             <Popup>
