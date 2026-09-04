@@ -1,12 +1,12 @@
+import Setting from '@/Compunents/Settings/Setting'
 import React from 'react'
-import Setting from '../Compunents/Settings/Setting'
+
 
 const page = () => {
   return (
     <>
 
-    <Setting />
-      
+      <Setting />          
     </>
   )
 }

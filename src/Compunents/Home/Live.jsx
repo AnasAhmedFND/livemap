@@ -1,6 +1,6 @@
 "use client"
 import React, { useEffect, useState } from 'react'
-import { onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth, db } from "@/firebase/firebaseConfig";
 
 import { FaLocationDot } from "react-icons/fa6";
@@ -62,9 +62,45 @@ const Live = () => {
 
   // friendLocation_______________________________________________
   const [friendLocation, setFriendLocation] = useState(null);
-
+  const [shareLocation, setShareLocation] = useState(true);
+  const [highAccuracy, setHighAccuracy] = useState(true);
+  const [updateInterval, setUpdateInterval] = useState(15000);
+  // my_LocationPlace_Name________________________________________
   const [myPlaceName, setMyPlaceName] = useState("Getting location...");
+  // Frien_dLocationPlace_Name__________________________________
   const [friendPlaceName, setFriendPlaceName] = useState("Location loading...");
+
+
+
+
+  // =================================================
+  // 🚪 LOGOUT
+  // =================================================
+
+  const handleLogout = async () => {
+
+    const confirmLogout = window.confirm(
+      "Are you sure you want to logout?"
+    );
+
+    if (!confirmLogout) {
+      return;
+    }
+
+    try {
+
+      await signOut(auth);
+
+      console.log("Logout successful ✅");
+
+      window.location.href = "/login_p";
+
+    } catch (error) {
+
+      console.error("Logout error:", error);
+
+    }
+  };
 
 
   // =================================================
@@ -144,119 +180,192 @@ const Live = () => {
   // MY_Real_Location______________________________________________________________
 
   useEffect(() => {
+    if (!user) return;
 
     if (!navigator.geolocation) {
-      console.log("Geolocation is not supported");
+      console.log("❌ Geolocation is not supported");
       return;
     }
 
+    // -----------------------------------------
+    // 📍 SHARE LOCATION OFF
+    // -----------------------------------------
+
+    if (!shareLocation) {
+      console.log("📍 Share Live Location is OFF");
+
+      return;
+    }
+
+    console.log("📍 Location tracking started");
+    console.log("🎯 High Accuracy:", highAccuracy);
+    console.log("⏱️ Update Interval:", updateInterval, "ms");
+
+    let lastFirebaseUpdate = 0;
+
+    const saveLocationToFirebase = async (
+      lat,
+      lng,
+      accuracy
+    ) => {
+      const now = Date.now();
+
+      // -----------------------------------------
+      // ⏱️ UPDATE INTERVAL
+      // -----------------------------------------
+
+      if (
+        lastFirebaseUpdate !== 0 &&
+        now - lastFirebaseUpdate < updateInterval
+      ) {
+        console.log("⏳ Waiting for next location update...");
+        return;
+      }
+
+      lastFirebaseUpdate = now;
+
+      try {
+        await setDoc(
+          doc(db, "locations", user.uid),
+          {
+            uid: user.uid,
+            lat,
+            lng,
+            accuracy,
+            updatedAt: new Date(),
+          },
+          { merge: true }
+        );
+
+        console.log("📍 Location saved to Firebase ✅");
+      } catch (error) {
+        console.error(
+          "❌ Location save error:",
+          error
+        );
+      }
+    };
+
+    // -----------------------------------------
+    // 📍 WATCH LOCATION
+    // -----------------------------------------
+
     const watchId = navigator.geolocation.watchPosition(
-
-      async (position) => {
-
+      (position) => {
         const lat = position.coords.latitude;
         const lng = position.coords.longitude;
         const accuracy = position.coords.accuracy;
 
-        console.log("REAL LOCATION:");
+        console.log("📍 REAL LOCATION:");
         console.log("Latitude:", lat);
         console.log("Longitude:", lng);
         console.log("Accuracy:", accuracy, "meters");
 
-        // ভালো accuracy হলে location update করবে
-        if (accuracy <= 1000) {
+        // -----------------------------------------
+        // OWN MAP LOCATION
+        // -----------------------------------------
 
+        if (accuracy <= 1000) {
           setMyLocation({
-            lat: lat,
-            lng: lng,
-            accuracy: accuracy,
+            lat,
+            lng,
+            accuracy,
           });
 
-          // 📍 Get my real place name
-          console.log("🔵 MY LOCATION → Getting place name...");
+          // -----------------------------------------
+          // PLACE NAME
+          // -----------------------------------------
 
           getPlaceName(lat, lng)
             .then((place) => {
-
-              console.log("🔵 MY PLACE NAME RESULT:", place);
-
-              setMyPlaceName(place);
-
-            })
-            .catch((error) => {
-
-              console.error("🔴 MY PLACE NAME ERROR:", error);
-
-              setMyPlaceName("Location unavailable");
-
-            });
-
-          // Firebase-এ নিজের location save
-          if (auth.currentUser) {
-
-            try {
-
-              await setDoc(
-                doc(db, "locations", auth.currentUser.uid),
-                {
-                  uid: auth.currentUser.uid,
-                  lat: lat,
-                  lng: lng,
-                  accuracy: accuracy,
-                  updatedAt: new Date(),
-                },
-                { merge: true }
+              console.log(
+                "🔵 MY PLACE NAME RESULT:",
+                place
               );
 
-              console.log("Location saved to Firebase ✅");
+              setMyPlaceName(place);
+            })
+            .catch((error) => {
+              console.error(
+                "🔴 MY PLACE NAME ERROR:",
+                error
+              );
 
-            } catch (error) {
+              setMyPlaceName(
+                "Location unavailable"
+              );
+            });
 
-              console.error("Location save error:", error);
+          // -----------------------------------------
+          // FIREBASE
+          // -----------------------------------------
 
-            }
-
-          }
-
+          saveLocationToFirebase(
+            lat,
+            lng,
+            accuracy
+          );
         }
-
       },
 
       (error) => {
-
-        console.log("Location Error:", error);
+        console.log(
+          "❌ Location Error:",
+          error
+        );
 
         if (error.code === 1) {
-          console.log("Location permission denied.");
+          console.log(
+            "Location permission denied."
+          );
         }
 
         if (error.code === 2) {
-          console.log("Location unavailable.");
+          console.log(
+            "Location unavailable."
+          );
         }
 
         if (error.code === 3) {
-          console.log("Location request timed out.");
+          console.log(
+            "Location request timed out."
+          );
         }
-
       },
 
       {
-        enableHighAccuracy: true,
+        // -----------------------------------------
+        // 🎯 HIGH ACCURACY
+        // -----------------------------------------
+
+        enableHighAccuracy: highAccuracy,
 
         timeout: 10000,
 
         maximumAge: 5000,
       }
-
     );
 
-    console.log("Watching location. Watch ID:", watchId);
+    console.log(
+      "👀 Watching location. Watch ID:",
+      watchId
+    );
 
     return () => {
-      navigator.geolocation.clearWatch(watchId);
-    };
+      console.log(
+        "🛑 Location tracking stopped"
+      );
 
-  }, []);
+      navigator.geolocation.clearWatch(
+        watchId
+      );
+    };
+  }, [
+    user,
+    shareLocation,
+    highAccuracy,
+    updateInterval,
+  ]);
 
   // Firebase থেকে invitation receive___________________________________________
 
@@ -434,6 +543,50 @@ const Live = () => {
   }, [user, connection]);
 
 
+  // Location_trecing========================================================
+  useEffect(() => {
+    if (!user) return;
+
+    const userRef = doc(db, "users", user.uid);
+
+    const unsubscribe = onSnapshot(
+      userRef,
+      (snapshot) => {
+        if (!snapshot.exists()) return;
+
+        const data = snapshot.data();
+
+        setShareLocation(
+          data.shareLocation !== undefined
+            ? data.shareLocation
+            : true
+        );
+
+        setHighAccuracy(
+          data.highAccuracy !== undefined
+            ? data.highAccuracy
+            : true
+        );
+
+        setUpdateInterval(
+          data.updateInterval || 15000
+        );
+
+        console.log("⚙️ Location settings:", {
+          shareLocation: data.shareLocation,
+          highAccuracy: data.highAccuracy,
+          updateInterval: data.updateInterval,
+        });
+      },
+      (error) => {
+        console.error("Location settings error:", error);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [user]);
+
+
   return (
     <>
 
@@ -578,13 +731,18 @@ const Live = () => {
               </Link>
 
               {/* logout ,,,,,,,,*/}
-              <Link href={"/login_p"} >
-                <div className="flex items-center gap-2 ">
-                  <p><IoMdLogOut /> </p>
-                  <p>Logout</p>
-                </div>
+              <div
+                onClick={handleLogout}
+                className="flex items-center gap-2 cursor-pointer"
+              >
+                <p>
+                  <IoMdLogOut />
+                </p>
 
-              </Link>
+                <p>
+                  Logout
+                </p>
+              </div>
             </div>
 
 
