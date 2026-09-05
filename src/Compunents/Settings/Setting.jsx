@@ -15,7 +15,16 @@ import { FcAbout } from "react-icons/fc";
 // functional_import===================================================
 // =======================================================================
 import { onAuthStateChanged, updateProfile } from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import {
+    doc,
+    getDoc,
+    setDoc,
+    collection,
+    query,
+    deleteDoc,
+    where,
+    onSnapshot,
+} from "firebase/firestore";
 import { auth, db } from "@/firebase/firebaseConfig";
 
 
@@ -26,6 +35,12 @@ const Setting = () => {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [photo, setPhoto] = useState("");
+    // friend_section_________________________________________
+    const [friends, setFriends] = useState([]);
+    const [pendingRequests, setPendingRequests] = useState([]);
+
+    // Block_friends__________________________________________
+    const [blockedUsers, setBlockedUsers] = useState([]);
 
     const [phone, setPhone] = useState("");
     const [bio, setBio] = useState("");
@@ -40,10 +55,12 @@ const Setting = () => {
     const [highAccuracy, setHighAccuracy] = useState(true);
     const [updateInterval, setUpdateInterval] = useState(5000);
     const [savingLocation, setSavingLocation] = useState(false);
+    // light & Dark_____________________________________________________
+    const [theme, setTheme] = useState("dark");
 
-   
 
-    
+
+
 
     // ==========================================
     // 🔵 GET LOGGED IN USER
@@ -193,6 +210,341 @@ const Setting = () => {
             setSavingLocation(false);
         }
     };
+
+
+    // ==========================================
+    // 👥 LOAD MY FRIENDS
+    // ==========================================
+
+    useEffect(() => {
+        if (!user) return;
+
+        const connectionsRef = collection(db, "connections");
+
+        // User is user1
+        const q1 = query(
+            connectionsRef,
+            where("user1Uid", "==", user.uid)
+        );
+
+        // User is user2
+        const q2 = query(
+            connectionsRef,
+            where("user2Uid", "==", user.uid)
+        );
+
+        let friendsFromQ1 = [];
+        let friendsFromQ2 = [];
+
+        const updateFriends = () => {
+            const allConnections = [
+                ...friendsFromQ1,
+                ...friendsFromQ2,
+            ];
+
+            const friendList = allConnections.map((connection) => {
+                if (connection.user1Uid === user.uid) {
+                    return {
+                        uid: connection.user2Uid,
+                        name: connection.user2Name || "Unknown User",
+                        photo: connection.user2Photo || "",
+                    };
+                }
+
+                return {
+                    uid: connection.user1Uid,
+                    name: connection.user1Name || "Unknown User",
+                    photo: connection.user1Photo || "",
+                };
+            });
+
+            // Remove duplicate friends
+            const uniqueFriends = friendList.filter(
+                (friend, index, self) =>
+                    index === self.findIndex(
+                        (item) => item.uid === friend.uid
+                    )
+            );
+
+            setFriends(uniqueFriends);
+        };
+
+        const unsubscribe1 = onSnapshot(q1, (snapshot) => {
+            friendsFromQ1 = snapshot.docs.map((doc) => doc.data());
+            updateFriends();
+        });
+
+        const unsubscribe2 = onSnapshot(q2, (snapshot) => {
+            friendsFromQ2 = snapshot.docs.map((doc) => doc.data());
+            updateFriends();
+        });
+
+        return () => {
+            unsubscribe1();
+            unsubscribe2();
+        };
+    }, [user]);
+
+    // ==========================================
+    // 📩 LOAD PENDING FRIEND REQUESTS
+    // ==========================================
+
+    useEffect(() => {
+        if (!user?.email) return;
+
+        const invitationsRef = collection(db, "invitations");
+
+        const q = query(
+            invitationsRef,
+            where("toEmail", "==", user.email),
+            where("status", "==", "pending")
+        );
+
+        const unsubscribe = onSnapshot(
+            q,
+            (snapshot) => {
+                const requests = snapshot.docs.map((item) => ({
+                    id: item.id,
+                    ...item.data(),
+                }));
+
+                setPendingRequests(requests);
+            },
+            (error) => {
+                console.error("Pending requests error:", error);
+            }
+        );
+
+        return () => unsubscribe();
+    }, [user]);
+
+    // ==========================================
+    // ✅ ACCEPT FRIEND REQUEST
+    // ==========================================
+
+    const handleAcceptRequest = async (request) => {
+        try {
+            await setDoc(
+                doc(db, "invitations", request.id),
+                {
+                    status: "accepted",
+                },
+                { merge: true }
+            );
+
+            const connectionId =
+                request.fromUid < user.uid
+                    ? `${request.fromUid}_${user.uid}`
+                    : `${user.uid}_${request.fromUid}`;
+
+            await setDoc(
+                doc(db, "connections", connectionId),
+                {
+                    user1Uid: request.fromUid,
+                    user1Name: request.fromName,
+                    user1Photo: request.fromPhoto || "",
+
+                    user2Uid: user.uid,
+                    user2Name: user.displayName || "",
+                    user2Photo: user.photoURL || "",
+
+                    createdAt: new Date(),
+                },
+                { merge: true }
+            );
+
+            console.log("Friend request accepted ✅");
+
+        } catch (error) {
+            console.error("Accept request error:", error);
+            alert("Failed to accept request.");
+        }
+    };
+
+
+    // ==========================================
+    // ❌ REJECT FRIEND REQUEST
+    // ==========================================
+
+    const handleRejectRequest = async (request) => {
+        try {
+            await setDoc(
+                doc(db, "invitations", request.id),
+                {
+                    status: "rejected",
+                },
+                { merge: true }
+            );
+
+            console.log("Friend request rejected ❌");
+
+        } catch (error) {
+            console.error("Reject request error:", error);
+            alert("Failed to reject request.");
+        }
+    };
+
+    // ==========================================
+    // 🚫 LOAD BLOCKED USERS__1 (part)
+    // ==========================================
+
+    useEffect(() => {
+        if (!user) return;
+
+        const blockedRef = collection(db, "blockedUsers");
+
+        const q = query(
+            blockedRef,
+            where("blockedBy", "==", user.uid)
+        );
+
+        const unsubscribe = onSnapshot(
+            q,
+            (snapshot) => {
+                const blockedList = snapshot.docs.map((item) => ({
+                    id: item.id,
+                    ...item.data(),
+                }));
+
+                setBlockedUsers(blockedList);
+            },
+            (error) => {
+                console.error("Blocked users error:", error);
+            }
+        );
+
+        return () => unsubscribe();
+    }, [user]);
+
+    const handleUnblockUser = async (blockedUser) => {
+        try {
+            await deleteDoc(
+                doc(db, "blockedUsers", blockedUser.id)
+            );
+
+            console.log("User unblocked successfully ✅");
+
+        } catch (error) {
+            console.error("Unblock error:", error);
+            alert("Failed to unblock user.");
+        }
+    };
+
+    // ==========================================
+    // 🚫 BLOCK USER___2 (part)
+    // ==========================================
+
+    const handleBlockUser = async (friend) => {
+        if (!user || !friend) return;
+
+        const confirmBlock = window.confirm(
+            `Are you sure you want to block ${friend.name}?`
+        );
+
+        if (!confirmBlock) return;
+
+        try {
+            // ------------------------------------------
+            // 🚫 SAVE BLOCKED USER
+            // ------------------------------------------
+
+            const blockedId = `${user.uid}_${friend.uid}`;
+
+            await setDoc(
+                doc(db, "blockedUsers", blockedId),
+                {
+                    blockedBy: user.uid,
+
+                    userUid: friend.uid,
+                    userName: friend.name,
+                    userPhoto: friend.photo || "",
+
+                    createdAt: new Date(),
+                }
+            );
+
+            // ------------------------------------------
+            // ❌ REMOVE CONNECTION
+            // ------------------------------------------
+
+            const connectionId =
+                user.uid < friend.uid
+                    ? `${user.uid}_${friend.uid}`
+                    : `${friend.uid}_${user.uid}`;
+
+            await deleteDoc(
+                doc(db, "connections", connectionId)
+            );
+
+            console.log(
+                "User blocked and connection removed 🚫"
+            );
+
+            alert(`${friend.name} has been blocked.`);
+
+        } catch (error) {
+            console.error("Block user error:", error);
+            alert("Failed to block user.");
+        }
+    };
+
+    // ==========================================
+    // Light and Dark
+    // ==========================================
+    const handleThemeChange = async (newTheme) => {
+        if (!user) return;
+
+        try {
+            // UI immediately change
+            setTheme(newTheme);
+
+            // Save theme to Firebase
+            await setDoc(
+                doc(db, "users", user.uid),
+                {
+                    theme: newTheme,
+                },
+                { merge: true }
+            );
+
+            console.log("Theme saved:", newTheme);
+
+        } catch (error) {
+            console.error("Theme update error:", error);
+        }
+    };
+
+    // ==========================================
+    // 🎨 LOAD SAVED THEME
+    // ==========================================
+
+    useEffect(() => {
+        if (!user) return;
+
+        const loadTheme = async () => {
+            try {
+                const userDoc = await getDoc(
+                    doc(db, "users", user.uid)
+                );
+
+                if (userDoc.exists()) {
+                    const data = userDoc.data();
+
+                    if (data.theme) {
+                        setTheme(data.theme);
+                    }
+                }
+
+            } catch (error) {
+                console.error("Theme load error:", error);
+            }
+        };
+
+        loadTheme();
+
+    }, [user]);
+
+
 
 
     return (
@@ -591,10 +943,213 @@ const Setting = () => {
                             <div className="">
                                 <h3 className='flex items-center gap-2 text-2xl font-bold text-blue-500 mt-5'> <FaUserFriends /> Friends & Permissions <span className='font-bold text-3xl text-white  hover:text-black pr-4 '>#</span> </h3>
                                 <ul>
-                                    <li className='flex items-center gap-2'> <BsDot />MY Friends  </li>
-                                    <li className='flex items-center gap-2'> <BsDot />Pending Requests  </li>
-                                    <li className='flex items-center gap-2'> <BsDot />Blocked Users  </li>
-                                    <li className='flex items-center gap-2'> <BsDot />Invite Friend  </li>
+                                    {/* My_friend_lode__________________________ */}
+                                    <li className='flex items-center gap-2 '>
+
+                                        <div className="flex flex-col gap-3 w-full">
+
+                                            <span className="font-semibold">
+                                                → MY Friends ({friends.length})
+                                            </span>
+
+                                            {friends.length === 0 ? (
+                                                <p className="text-sm text-gray-400 ml-5">
+                                                    No friends yet.
+                                                </p>
+                                            ) : (
+                                                <div className="flex flex-col gap-3 ml-5 border-l-2 ">
+
+                                                    {friends.map((friend) => (
+                                                        <div
+                                                            key={friend.uid}
+                                                            className="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition"
+                                                        >
+
+                                                            {/* Friend Photo */}
+                                                            {friend.photo ? (
+                                                                <img
+                                                                    src={friend.photo}
+                                                                    alt={friend.name}
+                                                                    className="w-11 h-11 rounded-full object-cover"
+                                                                />
+                                                            ) : (
+                                                                <div className="w-11 h-11 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
+                                                                    {friend.name?.charAt(0)?.toUpperCase()}
+                                                                </div>
+                                                            )}
+
+                                                            {/* Friend Info */}
+                                                            <div className="flex flex-col">
+                                                                <span className="font-semibold text-black ">
+                                                                    {friend.name}
+                                                                </span>
+
+
+                                                                <span className="text-xs text-gray-400">
+                                                                    Connected Friend
+                                                                </span>
+                                                            </div>
+
+                                                            <button
+                                                                onClick={() => handleBlockUser(friend)}
+                                                                className="ml-auto px-3 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white text-sm transition"
+                                                            >
+                                                                Block
+                                                            </button>
+
+                                                        </div>
+                                                    ))}
+
+                                                </div>
+                                            )}
+
+                                        </div>
+                                    </li>
+
+                                    {/* Pendding_Friend___________________________ */}
+                                    <li className='flex items-center gap-2'>
+
+
+                                        <div className="flex flex-col gap-3 w-full">
+
+                                            <span className="font-semibold">
+                                                → Pending Requests ({pendingRequests.length})
+                                            </span>
+
+                                            {pendingRequests.length === 0 ? (
+                                                <p className="text-sm text-gray-400 ml-5">
+                                                    No pending requests.
+                                                </p>
+                                            ) : (
+                                                <div className="flex flex-col gap-3 ml-5">
+
+                                                    {pendingRequests.map((request) => (
+                                                        <div
+                                                            key={request.id}
+                                                            className="flex items-center justify-between gap-3 p-3 rounded-xl bg-white/5"
+                                                        >
+
+                                                            {/* User info */}
+                                                            <div className="flex items-center gap-3">
+
+                                                                {request.fromPhoto ? (
+                                                                    <img
+                                                                        src={request.fromPhoto}
+                                                                        alt={request.fromName}
+                                                                        className="w-11 h-11 rounded-full object-cover"
+                                                                    />
+                                                                ) : (
+                                                                    <div className="w-11 h-11 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
+                                                                        {request.fromName?.charAt(0)?.toUpperCase()}
+                                                                    </div>
+                                                                )}
+
+                                                                <div className="flex flex-col">
+                                                                    <span className="font-semibold text-black">
+                                                                        {request.fromName || "Unknown User"}
+                                                                    </span>
+
+                                                                    <span className="text-xs text-gray-400">
+                                                                        Wants to connect with you
+                                                                    </span>
+                                                                </div>
+
+                                                            </div>
+
+                                                            {/* Buttons */}
+                                                            <div className="flex gap-2">
+
+                                                                <button
+                                                                    onClick={() => handleAcceptRequest(request)}
+                                                                    className="px-3 py-2 rounded-lg bg-green-500 hover:bg-green-600 text-white text-sm"
+                                                                >
+                                                                    Accept
+                                                                </button>
+
+                                                                <button
+                                                                    onClick={() => handleRejectRequest(request)}
+                                                                    className="px-3 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white text-sm"
+                                                                >
+                                                                    Reject
+                                                                </button>
+
+                                                            </div>
+
+                                                        </div>
+                                                    ))}
+
+                                                </div>
+                                            )}
+
+                                        </div>
+                                    </li>
+                                    {/* Block_friends____________________________ */}
+                                    <li className='flex items-center gap-2'>
+
+
+                                        <div className="flex flex-col gap-3 w-full">
+
+                                            <span className="font-semibold">
+                                                → Blocked Users ({blockedUsers.length})
+                                            </span>
+
+                                            {blockedUsers.length === 0 ? (
+                                                <p className="text-sm text-gray-400 ml-5">
+                                                    No blocked users.
+                                                </p>
+                                            ) : (
+                                                <div className="flex flex-col gap-3 ml-5">
+
+                                                    {blockedUsers.map((blockedUser) => (
+                                                        <div
+                                                            key={blockedUser.id}
+                                                            className="flex items-center justify-between gap-3 p-3 rounded-xl bg-white/5"
+                                                        >
+
+                                                            <div className="flex items-center gap-3">
+
+                                                                {blockedUser.userPhoto ? (
+                                                                    <img
+                                                                        src={blockedUser.userPhoto}
+                                                                        alt={blockedUser.userName}
+                                                                        className="w-11 h-11 rounded-full object-cover"
+                                                                    />
+                                                                ) : (
+                                                                    <div className="w-11 h-11 rounded-full bg-red-500 flex items-center justify-center text-white font-bold">
+                                                                        {blockedUser.userName
+                                                                            ?.charAt(0)
+                                                                            ?.toUpperCase()}
+                                                                    </div>
+                                                                )}
+
+                                                                <div className="flex flex-col">
+                                                                    <span className="font-semibold text-white">
+                                                                        {blockedUser.userName || "Unknown User"}
+                                                                    </span>
+
+                                                                    <span className="text-xs text-gray-400">
+                                                                        Blocked user
+                                                                    </span>
+                                                                </div>
+
+                                                            </div>
+
+                                                            <button
+                                                                onClick={() => handleUnblockUser(blockedUser)}
+                                                                className="px-3 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-sm"
+                                                            >
+                                                                Unblock
+                                                            </button>
+
+                                                        </div>
+                                                    ))}
+
+                                                </div>
+                                            )}
+
+                                        </div>
+                                    </li>
+
 
                                 </ul>
 
@@ -629,14 +1184,69 @@ const Setting = () => {
                             </div>
 
                             {/* Appearance ,,,,,,,,,,,,,,,,,,,,,,,,,,*/}
-                            <div className="">
-                                <h3 className='flex items-center gap-2 text-2xl font-bold text-blue-500 mt-5'> 🎨 Appearance <span className='font-bold text-3xl text-white  hover:text-black pr-4 '>#</span></h3>
-                                <ul>
-                                    <li className='flex items-center gap-2'> <BsDot /><MdSunny /> Light </li>
-                                    <li className='flex items-center gap-2'> <BsDot /><MdDarkMode /> Dark </li>
 
-                                </ul>
+                            <div>
+                                <h3 className='flex items-center gap-2 text-2xl font-bold text-blue-500 mt-5'>
+                                    🎨 Appearance
+                                    <span className='font-bold text-3xl text-white hover:text-black pr-4'>
+                                        #
+                                    </span>
+                                </h3>
 
+                                <div className="flex flex-col gap-3 mt-3">
+
+                                    {/* ☀️ Light Mode */}
+                                    <button
+                                        onClick={() => handleThemeChange("light")}
+                                        className={`flex items-center gap-3 w-full p-3 rounded-xl transition ${theme === "light"
+                                            ? "bg-blue-500 text-white"
+                                            : "bg-white/5 hover:bg-white/10"
+                                            }`}
+                                    >
+                                        <MdSunny className="text-xl" />
+
+                                        <div className="flex flex-col items-start">
+                                            <span className="font-semibold">
+                                                Light Mode
+                                            </span>
+
+                                            <span className="text-xs opacity-70">
+                                                Use a bright appearance
+                                            </span>
+                                        </div>
+
+                                        {theme === "light" && (
+                                            <span className="ml-auto">✓</span>
+                                        )}
+                                    </button>
+
+
+                                    {/* 🌙 Dark Mode */}
+                                    <button
+                                        onClick={() => handleThemeChange("dark")}
+                                        className={`flex items-center gap-3 w-full p-3 rounded-xl transition ${theme === "dark"
+                                            ? "bg-blue-500 text-white"
+                                            : "bg-white/5 hover:bg-white/10"
+                                            }`}
+                                    >
+                                        <MdDarkMode className="text-xl" />
+
+                                        <div className="flex flex-col items-start">
+                                            <span className="font-semibold">
+                                                Dark Mode
+                                            </span>
+
+                                            <span className="text-xs opacity-70">
+                                                Use a dark appearance
+                                            </span>
+                                        </div>
+
+                                        {theme === "dark" && (
+                                            <span className="ml-auto">✓</span>
+                                        )}
+                                    </button>
+
+                                </div>
                             </div>
 
                             {/* Map,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,, */}
