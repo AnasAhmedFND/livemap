@@ -590,12 +590,12 @@ const Live = () => {
   return (
     <>
 
-      <section className='bg-[#aaf4e7] p-10 '>
+      <section className=' p-10 bg-white text-black dark:bg-[#031627] dark:text-white '>
 
         {/* mother_div....................................................................... */}
-        <div className="flex container mx-auto border rounded-2xl bg-white  ">
+        <div className="flex container mx-auto border rounded-2xl h-screen bg-gray-100 dark:bg-white/5  ">
           {/* left_div ...........................................*/}
-          <div className="p-4 shadow-2xl w-[25%] ">
+          <div className="p-4 shadow-2xl w-[25%] border-r ">
             {/* live_icon ,,,,,,,,,,*/}
             <div className="flex gap-2">
               <p className='font-bold text-5xl text-blue-500 ' ><FaLocationDot /></p>
@@ -608,7 +608,7 @@ const Live = () => {
             <div className="shadow-xl p-4 rounded-lg ">
               {/* my_location ,,,,,,,,,,*/}
               <article className='  border-b pb-4 '>
-                <h4 className='font-bold text-lg flex justify-center text-[#2d3e53] '>My Location</h4>
+                <h4 className='font-bold text-lg flex justify-center text-[#2d5350] '>My Location</h4>
 
                 <div className="flex gap-4 mt-4">
                   <div className="relative ">
@@ -653,7 +653,7 @@ const Live = () => {
 
               {/* Pepole(All),,,,,,,,,,,,,,,, */}
 
-              <article className='overflow-y-auto pt-4'>
+              <article className=' pt-4   '>
 
                 <h4 className='font-bold text-lg flex justify-center text-[#2d3e53]'>
                   People({connection ? 1 : 0})
@@ -661,7 +661,7 @@ const Live = () => {
 
                 {connection && (
 
-                  <div className="flex gap-4 mt-4">
+                  <div className="flex gap-4 mt-4  overflow-y-auto h-[250px] ">
 
                     <div className="relative">
 
@@ -708,7 +708,7 @@ const Live = () => {
               {/* invite Pepole,,,,,,,,,,,, */}
               <div
                 onClick={() => setShowInvite(true)}
-                className="flex gap-2 border bg-blue-500 py-4 text-white justify-center items-center rounded-xl mt-12 cursor-pointer"
+                className="flex gap-2 border bg-blue-500 py-4 text-white justify-center items-center rounded-xl mt-5 cursor-pointer"
               >
                 <p><FaPlus /></p>
                 <p>Invite People</p>
@@ -719,7 +719,7 @@ const Live = () => {
 
             {/* setting $ logout,,,,,,,,,,,,,,,,,,,, */}
 
-            <div className="flex mt-4 justify-between py-4 ">
+            <div className="flex  justify-between py-4 ">
               {/* setting ,,,,,,,,,*/}
 
               <Link href={"/setting_p"} >
@@ -765,9 +765,9 @@ const Live = () => {
 
             {/* live_map_ ___________________________*/}
             <div className="relative ">
-              <div className="h-full w-full  ">
+              <div className="h-full w-full   ">
 
-                <Map
+                <Map 
                   myPhoto={user?.photoURL}
                   myName={user?.displayName}
 

@@ -463,7 +463,7 @@ const Map = ({ friendLocation, friendPhoto, friendName, myPhoto, myName }) => {
         zoom={13}
 
         style={{
-          height: "500px",
+          height: "600px",
           width: "100%",
         }}
       >
@@ -550,7 +550,7 @@ const Map = ({ friendLocation, friendPhoto, friendName, myPhoto, myName }) => {
 
         style={{
           position: "absolute",
-          bottom: "20px",
+          bottom: "40px",          
           right: "20px",
           zIndex: 1000,
           padding: "10px 15px",

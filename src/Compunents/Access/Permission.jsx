@@ -37,9 +37,9 @@ const Permission = () => {
 
 
     return (
-        <section className='container mx-auto border bg-[#031627] flex justify-center py-20 h-screen'>
+        <section className='container mx-auto  bg-[#031627] flex justify-center py-20 h-screen'>
 
-            <div className="bg-white w-[600px] text-center py-5 rounded-xl flex flex-col justify-center items-center">
+            <div className="bg-white w-[600px] text-center py-5 rounded-xl flex flex-col justify-center items-center text-black ">
 
                 <h4 className='font-bold text-xl'>
                     Location permission

@@ -12,6 +12,8 @@ import { IoMdNotifications } from "react-icons/io";
 import { FaMapMarkedAlt } from "react-icons/fa";
 import { FcAbout } from "react-icons/fc";
 
+import { useTheme } from "@/Theme/ThemeProvider";
+
 // functional_import===================================================
 // =======================================================================
 import { onAuthStateChanged, updateProfile } from "firebase/auth";
@@ -56,7 +58,7 @@ const Setting = () => {
     const [updateInterval, setUpdateInterval] = useState(5000);
     const [savingLocation, setSavingLocation] = useState(false);
     // light & Dark_____________________________________________________
-    const [theme, setTheme] = useState("dark");
+    const { theme, changeTheme } = useTheme();
 
 
 
@@ -496,7 +498,7 @@ const Setting = () => {
 
         try {
             // UI immediately change
-            setTheme(newTheme);
+            changeTheme(newTheme);
 
             // Save theme to Firebase
             await setDoc(
@@ -531,7 +533,7 @@ const Setting = () => {
                     const data = userDoc.data();
 
                     if (data.theme) {
-                        setTheme(data.theme);
+                        changeTheme(data.theme);
                     }
                 }
 
@@ -552,9 +554,9 @@ const Setting = () => {
             {/* Settings mother_div ...........................................*/}
             <div className="container mx-auto  flex   ">
                 {/* left_div _________________________*/}
-                <div className=" w-[30%] h-screen   ">
-                    <h2 className='flex items-center gap-2  h-14 font-bold text-2xl px-2 shadow-xl fixed w-2xl border-b   ' ><AiTwotoneSetting className='text-4xl ' /> Settings </h2>
-
+                <div className=" w-[30%] h-screen    ">
+                    <h2 className='flex items-center gap-2  h-14 font-bold text-2xl px-2 shadow-xl fixed border-b w-[461px]  ' ><AiTwotoneSetting className='text-4xl ' /> Settings </h2>
+ 
                     {/* Category______________________ */}
                     <div className="p-2 pt-5 flex flex-col gap-3 shadow-2xl h-screen mt-14 fixed  w-[28%] ">
 
@@ -628,7 +630,7 @@ const Setting = () => {
                 {/* Right_div_________________________ */}
                 <div className=" w-[70%] border-l ">
                     {/* Search ,,,,,,,,,,,,,,,,,,,,,, */}
-                    <div className=" h-14 shadow-xl flex  align-middle fixed  bg-white z-10  w-full border-b  ">
+                    <div className=" h-14 shadow-xl flex  align-middle w-full border-b  ">
                         <input className=' px-4 outline-none text-xl w-full ' type="search" placeholder='Search..' />
 
                     </div>
@@ -639,7 +641,6 @@ const Setting = () => {
                         <div className="   ">
                             <h2 className='flex items-center gap-2 text-4xl font-bold text-blue-500  ' ><AiTwotoneSetting /> Settings__ </h2>
 
-                            {/* Profile,,,,,,,,,,,,,,,,,,,,,,,,,,, */}
                             {/* =================================================
                                 PROFILE
                                 ================================================= */}
@@ -651,6 +652,7 @@ const Setting = () => {
                                     <h3 className="flex items-center gap-2 text-2xl font-bold text-blue-500">
                                         <CgProfile />
                                         Profile
+                                        <span className='font-bold text-3xl text-white  hover:text-black pr-4 '>#</span>
 
 
                                     </h3>
@@ -692,11 +694,11 @@ const Setting = () => {
 
                                         <div>
 
-                                            <p className="text-xl font-bold">
+                                            <p className="text-xl text-black font-bold">
                                                 {name || "User"}
                                             </p>
 
-                                            <p className="text-gray-500">
+                                            <p className="text-black ">
                                                 {email || "No email"}
                                             </p>
 
@@ -707,7 +709,7 @@ const Setting = () => {
 
                                     {/* NAME */}
 
-                                    <div className="mb-5">
+                                    <div className="mb-5 text-black ">
 
                                         <label className="block font-semibold mb-2">
                                             Name
@@ -729,7 +731,7 @@ const Setting = () => {
 
                                     {/* EMAIL */}
 
-                                    <div className="mb-5">
+                                    <div className="mb-5 text-black">
 
                                         <label className="block font-semibold mb-2">
                                             Email
@@ -751,7 +753,7 @@ const Setting = () => {
 
                                     {/* PHONE */}
 
-                                    <div className="mb-5">
+                                    <div className="mb-5 text-black">
 
                                         <label className="block font-semibold mb-2">
                                             Phone
@@ -774,7 +776,7 @@ const Setting = () => {
 
                                     {/* BIO */}
 
-                                    <div className="mb-5">
+                                    <div className="mb-5 text-black">
 
                                         <label className="block font-semibold mb-2">
                                             Bio
@@ -980,7 +982,7 @@ const Setting = () => {
 
                                                             {/* Friend Info */}
                                                             <div className="flex flex-col">
-                                                                <span className="font-semibold text-black ">
+                                                                <span className="font-semibold  ">
                                                                     {friend.name}
                                                                 </span>
 

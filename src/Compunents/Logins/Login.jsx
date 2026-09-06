@@ -26,9 +26,9 @@ const Login = () => {
 
 
   return (
-    <section className='container mx-auto border bg-[#031627] flex justify-center py-20 h-screen '>
+    <section className='container mx-auto bg-[#031627] flex justify-center py-20 h-screen '>
 
-      <div className="bordr p-5 bg-white w-1/2 text-center flex flex-col justify-center py-10 ">
+      <div className="bordr p-5 bg-white text-black rounded-tl-4xl rounded-br-4xl w-1/2 text-center flex flex-col justify-center py-10 ">
         <p className='font-bold '>Stay Connected with the People Who Matter Most. </p>
         <p>Share your live location securely with family and trusted friends. </p>
 
