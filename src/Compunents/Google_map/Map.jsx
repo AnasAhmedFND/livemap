@@ -550,7 +550,7 @@ const Map = ({ friendLocation, friendPhoto, friendName, myPhoto, myName }) => {
 
         style={{
           position: "absolute",
-          bottom: "40px",          
+          bottom: "-40px",          
           right: "20px",
           zIndex: 1000,
           padding: "10px 15px",
@@ -561,6 +561,7 @@ const Map = ({ friendLocation, friendPhoto, friendName, myPhoto, myName }) => {
           boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
           cursor: "pointer",
           fontWeight: "600",
+          
         }}
       >
 

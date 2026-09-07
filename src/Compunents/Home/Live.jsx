@@ -70,7 +70,10 @@ const Live = () => {
   // Frien_dLocationPlace_Name__________________________________
   const [friendPlaceName, setFriendPlaceName] = useState("Location loading...");
 
+  // friend_offline-&-Online________________________________________
 
+
+console.log("Google/Firebase Display Name:", user?.displayName);
 
 
   // =================================================
@@ -193,7 +196,6 @@ const Live = () => {
 
     if (!shareLocation) {
       console.log("📍 Share Live Location is OFF");
-
       return;
     }
 
@@ -201,29 +203,16 @@ const Live = () => {
     console.log("🎯 High Accuracy:", highAccuracy);
     console.log("⏱️ Update Interval:", updateInterval, "ms");
 
-    let lastFirebaseUpdate = 0;
+
+    // -----------------------------------------
+    // 🔥 SAVE LOCATION TO FIREBASE
+    // -----------------------------------------
 
     const saveLocationToFirebase = async (
       lat,
       lng,
       accuracy
     ) => {
-      const now = Date.now();
-
-      // -----------------------------------------
-      // ⏱️ UPDATE INTERVAL
-      // -----------------------------------------
-
-      if (
-        lastFirebaseUpdate !== 0 &&
-        now - lastFirebaseUpdate < updateInterval
-      ) {
-        console.log("⏳ Waiting for next location update...");
-        return;
-      }
-
-      lastFirebaseUpdate = now;
-
       try {
         await setDoc(
           doc(db, "locations", user.uid),
@@ -238,6 +227,7 @@ const Live = () => {
         );
 
         console.log("📍 Location saved to Firebase ✅");
+
       } catch (error) {
         console.error(
           "❌ Location save error:",
@@ -246,120 +236,162 @@ const Live = () => {
       }
     };
 
+
     // -----------------------------------------
-    // 📍 WATCH LOCATION
+    // 📍 UPDATE LOCATION
     // -----------------------------------------
 
-    const watchId = navigator.geolocation.watchPosition(
-      (position) => {
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
-        const accuracy = position.coords.accuracy;
+    const updateLocation = () => {
 
-        console.log("📍 REAL LOCATION:");
-        console.log("Latitude:", lat);
-        console.log("Longitude:", lng);
-        console.log("Accuracy:", accuracy, "meters");
+      navigator.geolocation.getCurrentPosition(
 
-        // -----------------------------------------
-        // OWN MAP LOCATION
-        // -----------------------------------------
+        (position) => {
 
-        if (accuracy <= 1000) {
-          setMyLocation({
-            lat,
-            lng,
-            accuracy,
-          });
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          const accuracy = position.coords.accuracy;
+
+          console.log("📍 REAL LOCATION:");
+          console.log("Latitude:", lat);
+          console.log("Longitude:", lng);
+          console.log("Accuracy:", accuracy, "meters");
+
 
           // -----------------------------------------
-          // PLACE NAME
+          // 📍 OWN MAP LOCATION
           // -----------------------------------------
 
-          getPlaceName(lat, lng)
-            .then((place) => {
-              console.log(
-                "🔵 MY PLACE NAME RESULT:",
-                place
-              );
+          if (accuracy <= 1000) {
 
-              setMyPlaceName(place);
-            })
-            .catch((error) => {
-              console.error(
-                "🔴 MY PLACE NAME ERROR:",
-                error
-              );
-
-              setMyPlaceName(
-                "Location unavailable"
-              );
+            setMyLocation({
+              lat,
+              lng,
+              accuracy,
             });
 
-          // -----------------------------------------
-          // FIREBASE
-          // -----------------------------------------
 
-          saveLocationToFirebase(
-            lat,
-            lng,
-            accuracy
-          );
-        }
-      },
+            // -----------------------------------------
+            // 🗺️ PLACE NAME
+            // -----------------------------------------
 
-      (error) => {
-        console.log(
-          "❌ Location Error:",
-          error
-        );
+            getPlaceName(lat, lng)
+              .then((place) => {
 
-        if (error.code === 1) {
-          console.log(
-            "Location permission denied."
-          );
-        }
+                console.log(
+                  "🔵 MY PLACE NAME RESULT:",
+                  place
+                );
 
-        if (error.code === 2) {
-          console.log(
-            "Location unavailable."
-          );
-        }
+                setMyPlaceName(place);
 
-        if (error.code === 3) {
-          console.log(
-            "Location request timed out."
-          );
-        }
-      },
+              })
+              .catch((error) => {
 
-      {
+                console.error(
+                  "🔴 MY PLACE NAME ERROR:",
+                  error
+                );
+
+                setMyPlaceName(
+                  "Location unavailable"
+                );
+
+              });
+
+
+            // -----------------------------------------
+            // 🔥 FIREBASE UPDATE
+            // -----------------------------------------
+
+            saveLocationToFirebase(
+              lat,
+              lng,
+              accuracy
+            );
+
+          }
+
+        },
+
+
         // -----------------------------------------
-        // 🎯 HIGH ACCURACY
+        // ❌ LOCATION ERROR
         // -----------------------------------------
 
-        enableHighAccuracy: highAccuracy,
+        (error) => {
 
-        timeout: 10000,
+          console.log(
+            "❌ Location Error:",
+            error
+          );
 
-        maximumAge: 5000,
-      }
+          if (error.code === 1) {
+            console.log(
+              "Location permission denied."
+            );
+          }
+
+          if (error.code === 2) {
+            console.log(
+              "Location unavailable."
+            );
+          }
+
+          if (error.code === 3) {
+            console.log(
+              "Location request timed out."
+            );
+          }
+
+        },
+
+
+        // -----------------------------------------
+        // 🎯 LOCATION OPTIONS
+        // -----------------------------------------
+
+        {
+          enableHighAccuracy: highAccuracy,
+          timeout: 10000,
+          maximumAge: 5000,
+        }
+
+      );
+
+    };
+
+
+    // -----------------------------------------
+    // 🚀 FIRST LOCATION UPDATE IMMEDIATELY
+    // -----------------------------------------
+
+    updateLocation();
+
+
+    // -----------------------------------------
+    // ⏱️ AUTOMATIC UPDATE INTERVAL
+    // -----------------------------------------
+
+    const locationInterval = setInterval(
+      updateLocation,
+      updateInterval
     );
 
-    console.log(
-      "👀 Watching location. Watch ID:",
-      watchId
-    );
+
+    // -----------------------------------------
+    // 🛑 CLEANUP
+    // -----------------------------------------
 
     return () => {
+
       console.log(
         "🛑 Location tracking stopped"
       );
 
-      navigator.geolocation.clearWatch(
-        watchId
-      );
+      clearInterval(locationInterval);
+
     };
+
   }, [
     user,
     shareLocation,
@@ -586,6 +618,143 @@ const Live = () => {
     return () => unsubscribe();
   }, [user]);
 
+  // updatedTime_Offline & Online===========================================
+  const getFriendStatus = () => {
+    if (!friendLocation?.updatedAt) {
+      return {
+        text: "Offline",
+        isLive: false,
+      };
+    }
+
+    let updatedTime;
+
+    // Firestore Timestamp হলে
+    if (typeof friendLocation.updatedAt?.toDate === "function") {
+      updatedTime = friendLocation.updatedAt.toDate();
+    } else {
+      // Date/string হলে
+      updatedTime = new Date(friendLocation.updatedAt);
+    }
+
+    const now = new Date();
+
+    const differenceInSeconds = Math.floor(
+      (now.getTime() - updatedTime.getTime()) / 1000
+    );
+
+    // গত 1 মিনিটের মধ্যে location update হলে
+    if (differenceInSeconds < 60) {
+      return {
+        text: "Live now",
+        isLive: true,
+      };
+    }
+
+    const differenceInMinutes = Math.floor(
+      differenceInSeconds / 60
+    );
+
+    // 1 hour এর কম হলে
+    if (differenceInMinutes < 60) {
+      return {
+        text: `${differenceInMinutes} ${differenceInMinutes === 1 ? "minute" : "minutes"
+          } ago`,
+        isLive: false,
+      };
+    }
+
+    const differenceInHours = Math.floor(
+      differenceInMinutes / 60
+    );
+
+    return {
+      text: `${differenceInHours} ${differenceInHours === 1 ? "hour" : "hours"
+        } ago`,
+      isLive: false,
+    };
+  };
+  const status = getFriendStatus();
+
+  // Firebase realtime data Update_ in people Card====================================
+  useEffect(() => {
+
+    if (!user || !connection) {
+      setFriendLocation(null);
+      return;
+    }
+
+
+    // -----------------------------------------
+    // 👤 FIND FRIEND UID
+    // -----------------------------------------
+
+    const friendUid =
+      connection.user1Uid === user.uid
+        ? connection.user2Uid
+        : connection.user1Uid;
+
+
+    if (!friendUid) {
+      setFriendLocation(null);
+      return;
+    }
+
+
+    // -----------------------------------------
+    // 📍 REALTIME FRIEND LOCATION
+    // -----------------------------------------
+
+    const unsubscribe = onSnapshot(
+
+      doc(db, "locations", friendUid),
+
+      (locationDoc) => {
+
+        if (locationDoc.exists()) {
+
+          const locationData = locationDoc.data();
+
+          console.log(
+            "📍 Friend location updated:",
+            locationData
+          );
+
+          setFriendLocation(locationData);
+
+         
+
+        } else {
+
+          console.log(
+            "❌ Friend location not found"
+          );
+
+          setFriendLocation(null);
+
+        }
+
+      },
+
+      (error) => {
+
+        console.error(
+          "❌ Friend location listener error:",
+          error
+        );
+
+        setFriendLocation(null);
+
+      }
+
+    );
+
+
+    return () => unsubscribe();
+
+
+  }, [user, connection]);
+
 
   return (
     <>
@@ -692,9 +861,26 @@ const Live = () => {
 
                       <small> {friendPlaceName} </small>
 
-                      <p className='flex items-center text-green-500'>
-                        <GoDotFill /> Live Now
-                      </p>
+                      <div className="flex items-center gap-2 text-sm">
+
+                        <span
+                          className={`w-2.5 h-2.5 rounded-full ${status.isLive
+                            ? "bg-green-500"
+                            : "bg-gray-400"
+                            }`}
+                        />
+
+                        <span
+                          className={
+                            status.isLive
+                              ? "text-green-500"
+                              : "text-gray-400"
+                          }
+                        >
+                          {status.isLive ? "Live now" : status.text}
+                        </span>
+
+                      </div>
 
                     </div>
 
@@ -752,13 +938,15 @@ const Live = () => {
           <div className="w-[75%] ">
             {/* top ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,*/}
             <div>
-
-              <div className="flex items-center gap-2 font-bold justify-end py-4 border-b shadow-xl pr-4 ">
+              <Link href={"setting_p"} >
+              <div className="flex items-center gap-2 font-bold justify-end py-4 border-b shadow-xl pr-4   cursor-pointer ">
                 <img className='w-10 h-10 rounded-full  ' src="./live/my/ri_anas.jpg" alt="" />
-                <p>Anas Ahmed</p>
+                <p>Profile</p>
                 <p className='cursor-pointer  '><TiArrowSortedDown /></p>
                 <p className='cursor-pointer  '><BsThreeDotsVertical /></p>
               </div>
+
+              </Link>
 
             </div>
 
@@ -767,7 +955,7 @@ const Live = () => {
             <div className="relative ">
               <div className="h-full w-full   ">
 
-                <Map 
+                <Map
                   myPhoto={user?.photoURL}
                   myName={user?.displayName}
 
