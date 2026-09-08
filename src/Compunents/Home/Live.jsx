@@ -65,6 +65,12 @@ const Live = () => {
   const [shareLocation, setShareLocation] = useState(true);
   const [highAccuracy, setHighAccuracy] = useState(true);
   const [updateInterval, setUpdateInterval] = useState(15000);
+  const [friendPrivacy, setFriendPrivacy] = useState("friends");
+
+  // Privacy SelectedFriend______________________________________
+  const [friendSelectedFriends, setFriendSelectedFriends] = useState([]);
+
+
   // my_LocationPlace_Name________________________________________
   const [myPlaceName, setMyPlaceName] = useState("Getting location...");
   // Frien_dLocationPlace_Name__________________________________
@@ -72,8 +78,7 @@ const Live = () => {
 
   // friend_offline-&-Online________________________________________
 
-
-console.log("Google/Firebase Display Name:", user?.displayName);
+  console.log("Google/Firebase Display Name:", user?.displayName);
 
 
   // =================================================
@@ -676,7 +681,7 @@ console.log("Google/Firebase Display Name:", user?.displayName);
   };
   const status = getFriendStatus();
 
-  // Firebase realtime data Update_ in people Card====================================
+  // Firebase realtime data Update_ in people Card_(friend_location)==============
   useEffect(() => {
 
     if (!user || !connection) {
@@ -713,6 +718,40 @@ console.log("Google/Firebase Display Name:", user?.displayName);
 
         if (locationDoc.exists()) {
 
+          // 🔒 NOBODY PRIVACY
+
+          if (friendPrivacy === "nobody") {
+            console.log("🔒 FRIEND PRIVACY VALUE:", friendPrivacy);
+
+
+            console.log(
+              "🔒 Friend location is hidden"
+            );
+
+            setFriendLocation(null);
+            setFriendPlaceName("Location hidden");
+
+            return;
+          }
+
+          // 🔒 selectedFriends_Privacy
+
+          if (
+            friendPrivacy === "selected" &&
+            !friendSelectedFriends.includes(user.uid)
+          ) {
+
+            console.log(
+              "🔒 You are not selected to see this location"
+            );
+
+            setFriendLocation(null);
+            setFriendPlaceName("Location hidden");
+
+            return;
+          }
+
+
           const locationData = locationDoc.data();
 
           console.log(
@@ -722,7 +761,7 @@ console.log("Google/Firebase Display Name:", user?.displayName);
 
           setFriendLocation(locationData);
 
-         
+
 
         } else {
 
@@ -752,6 +791,50 @@ console.log("Google/Firebase Display Name:", user?.displayName);
 
     return () => unsubscribe();
 
+
+  }, [user, connection, friendPrivacy, friendSelectedFriends, ]);
+
+  // Nobody/OnlyFriend/SelectFriend==============================
+  useEffect(() => {
+    if (!user || !connection) {
+      setFriendPrivacy("friends");
+      return;
+    }
+
+    const friendUid =
+      connection.user1Uid === user.uid
+        ? connection.user2Uid
+        : connection.user1Uid;
+
+    if (!friendUid) return;
+
+    const unsubscribe = onSnapshot(
+      doc(db, "users", friendUid),
+      (friendUserDoc) => {
+        if (friendUserDoc.exists()) {
+          const data = friendUserDoc.data();
+
+          setFriendPrivacy(
+            data.locationPrivacy || "friends"
+          );
+
+          setFriendSelectedFriends(
+            data.selectedFriends || []
+          );
+
+        }
+      },
+      (error) => {
+        console.error(
+          "Friend privacy listener error:",
+          error
+        );
+
+        setFriendPrivacy("friends");
+      }
+    );
+
+    return () => unsubscribe();
 
   }, [user, connection]);
 
@@ -939,12 +1022,12 @@ console.log("Google/Firebase Display Name:", user?.displayName);
             {/* top ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,*/}
             <div>
               <Link href={"setting_p"} >
-              <div className="flex items-center gap-2 font-bold justify-end py-4 border-b shadow-xl pr-4   cursor-pointer ">
-                <img className='w-10 h-10 rounded-full  ' src="./live/my/ri_anas.jpg" alt="" />
-                <p>Profile</p>
-                <p className='cursor-pointer  '><TiArrowSortedDown /></p>
-                <p className='cursor-pointer  '><BsThreeDotsVertical /></p>
-              </div>
+                <div className="flex items-center gap-2 font-bold justify-end py-4 border-b shadow-xl pr-4   cursor-pointer ">
+                  <img className='w-10 h-10 rounded-full  ' src="./live/my/ri_anas.jpg" alt="" />
+                  <p>Profile</p>
+                  <p className='cursor-pointer  '><TiArrowSortedDown /></p>
+                  <p className='cursor-pointer  '><BsThreeDotsVertical /></p>
+                </div>
 
               </Link>
 

@@ -59,6 +59,10 @@ const Setting = () => {
     const [savingLocation, setSavingLocation] = useState(false);
     // light & Dark_____________________________________________________
     const { theme, changeTheme } = useTheme();
+    // Section_Privacy_state____________________________________________
+    const [locationPrivacy, setLocationPrivacy] = useState("friends");
+    const [selectedFriends, setSelectedFriends] = useState([]);
+
 
 
 
@@ -547,6 +551,122 @@ const Setting = () => {
     }, [user]);
 
 
+    // Privacy_function========================
+    // ===========================================
+    const saveLocationPrivacy = async (privacy) => {
+        if (!user?.uid) return;
+
+        try {
+            await setDoc(
+                doc(db, "users", user.uid),
+                {
+                    locationPrivacy: privacy,
+                },
+                { merge: true }
+            );
+
+
+            console.log(
+                "🔒 Location privacy saved:",
+                privacy
+            );
+
+
+        } catch (error) {
+            console.error(
+                "Privacy save error:",
+                error
+            );
+        }
+    };
+
+    useEffect(() => {
+        if (!user?.uid) return;
+
+        const loadLocationPrivacy = async () => {
+            try {
+                const userDoc = await getDoc(
+                    doc(db, "users", user.uid)
+                );
+
+
+                if (userDoc.exists()) {
+                    const data = userDoc.data();
+                    if (data.selectedFriends) {
+                        setSelectedFriends(data.selectedFriends);
+                    }
+
+
+                    if (data.locationPrivacy) {
+                        setLocationPrivacy(
+                            data.locationPrivacy
+                        );
+                    }
+                }
+
+            } catch (error) {
+                console.error(
+                    "Privacy load error:",
+                    error
+                );
+            }
+
+
+        };
+
+        loadLocationPrivacy();
+
+    }, [user]);
+
+    // handleSelectedFriend===========================
+
+    const handleSelectedFriend = async (friend) => {
+        if (!user?.uid || !friend?.uid) return;
+
+        let updatedFriends;
+
+        if (selectedFriends.includes(friend.uid)) {
+            // Remove friend
+            updatedFriends = selectedFriends.filter(
+                (uid) => uid !== friend.uid
+            );
+        } else {
+            // Add friend
+            updatedFriends = [
+                ...selectedFriends,
+                friend.uid,
+            ];
+        }
+
+        setSelectedFriends(updatedFriends);
+
+        try {
+            await setDoc(
+                doc(db, "users", user.uid),
+                {
+                    selectedFriends: updatedFriends,
+                },
+                { merge: true }
+            );
+
+
+            console.log(
+                "🎯 Selected friends updated:",
+                updatedFriends
+            );
+
+
+        } catch (error) {
+            console.error(
+                "Selected friends error:",
+                error
+            );
+        }
+    };
+
+
+
+
 
 
     return (
@@ -556,7 +676,7 @@ const Setting = () => {
                 {/* left_div _________________________*/}
                 <div className=" w-[30%] h-screen    ">
                     <h2 className='flex items-center gap-2  h-14 font-bold text-2xl px-2 shadow-xl fixed border-b w-[461px]  ' ><AiTwotoneSetting className='text-4xl ' /> Settings </h2>
- 
+
                     {/* Category______________________ */}
                     <div className="p-2 pt-5 flex flex-col gap-3 shadow-2xl h-screen mt-14 fixed  w-[28%] ">
 
@@ -1160,12 +1280,147 @@ const Setting = () => {
                             {/* Privacy ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,*/}
                             <div className="">
                                 <h3 className='flex items-center gap-2 text-2xl font-bold text-blue-500 mt-5'> <FcPrivacy /> Privacy <span className='font-bold text-3xl text-white  hover:text-black pr-4 '>#</span> </h3>
-                                <ul>
-                                    <li className='flex items-center gap-2'> <BsDot />Only Friends  </li>
-                                    <li className='flex items-center gap-2'> <BsDot />Selected Friends </li>
-                                    <li className='flex items-center gap-2'> <BsDot />Nobody </li>
+                                <ul className="space-y-3 mt-2">
+
+                                    {/* 👥 ONLY FRIENDS */}
+                                    <li className="flex items-center gap-2">
+
+                                        <input
+                                            type="radio"
+                                            name="locationPrivacy"
+                                            value="friends"
+                                            checked={locationPrivacy === "friends"}
+                                            onChange={(e) => {
+                                                const newPrivacy = e.target.value;
+
+                                                setLocationPrivacy(newPrivacy);
+                                                saveLocationPrivacy(newPrivacy);
+                                            }}
+
+                                        />
+
+                                        <label>
+                                            Only Friends
+                                        </label>
+
+                                    </li>
+
+
+                                    {/* 🎯 SELECTED FRIENDS */}
+                                    <li className="flex items-center gap-2">
+
+                                        <input
+                                            type="radio"
+                                            name="locationPrivacy"
+                                            value="selected"
+                                            checked={locationPrivacy === "selected"}
+                                            onChange={(e) => {
+                                                const newPrivacy = e.target.value;
+
+                                                setLocationPrivacy(newPrivacy);
+                                                saveLocationPrivacy(newPrivacy);
+                                            }}
+
+                                        />
+
+                                        <label>
+                                            Selected Friends
+                                        </label>
+
+                                    </li>
+
+
+                                    {/* 🚫 NOBODY */}
+                                    <li className="flex items-center gap-2">
+
+                                        <input
+                                            type="radio"
+                                            name="locationPrivacy"
+                                            value="nobody"
+                                            checked={locationPrivacy === "nobody"}
+                                            onChange={(e) => {
+                                                const newPrivacy = e.target.value;
+
+                                                setLocationPrivacy(newPrivacy);
+                                                saveLocationPrivacy(newPrivacy);
+                                            }}
+
+                                        />
+
+                                        <label>
+                                            Nobody
+                                        </label>
+
+                                    </li>
 
                                 </ul>
+
+                                {locationPrivacy === "selected" && (
+
+                                    <div className="mt-3 space-y-2 pb-2 border-l pl-2">
+
+                                        
+                                        <p className="font-semibold">
+                                            Select friends who can see your location
+                                        </p>
+
+                                        {friends.length === 0 ? (
+
+                                            <p className="text-sm text-gray-400">
+                                                No friends available
+                                            </p>
+
+                                        ) : (
+
+                                            friends.map((friend) => (
+
+                                                <div
+                                                    key={friend.uid}
+                                                    className="flex items-center justify-between"
+                                                >
+
+                                                    <div className="flex items-center gap-2">
+
+                                                        <img
+                                                            src={
+                                                                friend.photo ||
+                                                                "/default-avatar.png"
+                                                            }
+                                                            alt={friend.name}
+                                                            className="w-8 h-8 rounded-full"
+                                                        />
+
+                                                        <span>
+                                                            {friend.name}
+                                                        </span>
+
+                                                    </div>
+
+
+                                                    <input
+                                                        type="checkbox"
+
+                                                        checked={
+                                                            selectedFriends.includes(
+                                                                friend.uid
+                                                            )
+                                                        }
+
+                                                        onChange={() =>
+                                                            handleSelectedFriend(friend)
+                                                        }
+                                                    />
+
+                                                </div>
+
+                                            ))
+
+                                        )}
+                                        
+
+                                    </div>
+                                )}
+
                                 <div className="">
                                     <p>Hide my location</p>
                                     <p>Invisible Mode</p>
