@@ -842,27 +842,28 @@ const Live = () => {
   return (
     <>
 
-      <section className=' p-10 bg-white text-black dark:bg-[#031627] dark:text-white '>
+      <section className=' md:p-10  bg-white text-black dark:bg-[#031627] dark:text-white '>
 
         {/* mother_div....................................................................... */}
-        <div className="flex container mx-auto border rounded-2xl h-screen bg-gray-100 dark:bg-white/5  ">
+        <div className="md:flex md:flex-row flex flex-col-reverse container mx-auto border md:rounded-t-2xl md:h-screen bg-gray-100 dark:bg-white/5  ">
           {/* left_div ...........................................*/}
-          <div className="p-4 shadow-2xl w-[25%] border-r ">
+          <div className=" shadow-2xl md:w-[25%] border-r  ">
             {/* live_icon ,,,,,,,,,,*/}
-            <div className="flex gap-2">
+            <div className="flex gap-2 mt-2 ">
               <p className='font-bold text-5xl text-blue-500 ' ><FaLocationDot /></p>
               <div className="">
                 <h4 className={`${sans.className} font-bold text-2xl`}><span className='text-blue-500'>Live</span><span>Map</span></h4>
                 <small className='text-[#8a8f8f] '>Stay Connected, Always</small>
               </div>
             </div>
+
             {/* my, people & invite_ div ||||||||||||||||||||||||*/}
             <div className="shadow-xl p-4 rounded-lg ">
               {/* my_location ,,,,,,,,,,*/}
-              <article className='  border-b pb-4 '>
+              <article className='  border-b pb-2 '>
                 <h4 className='font-bold text-lg flex justify-center text-[#2d5350] '>My Location</h4>
 
-                <div className="flex gap-4 mt-4">
+                <div className="flex gap-4 mt-2">
                   <div className="relative ">
                     {/* MY_Live_Img_________________________________________
                   ________________________________________________________ */}
@@ -905,7 +906,7 @@ const Live = () => {
 
               {/* Pepole(All),,,,,,,,,,,,,,,, */}
 
-              <article className=' pt-4   '>
+              <article className=' pt-2 h-[200px] '>
 
                 <h4 className='font-bold text-lg flex justify-center text-[#2d3e53]'>
                   People({connection ? 1 : 0})
@@ -913,7 +914,7 @@ const Live = () => {
 
                 {connection && (
 
-                  <div className="flex gap-4 mt-4  overflow-y-auto h-[250px] ">
+                  <div className="flex gap-4 mt-2  overflow-auto   ">
 
                     <div className="relative">
 
@@ -977,7 +978,7 @@ const Live = () => {
               {/* invite Pepole,,,,,,,,,,,, */}
               <div
                 onClick={() => setShowInvite(true)}
-                className="flex gap-2 border bg-blue-500 py-4 text-white justify-center items-center rounded-xl mt-5 cursor-pointer"
+                className="flex gap-2 border bg-blue-500 py-2 text-white justify-center items-center rounded-xl mt-5 cursor-pointer"
               >
                 <p><FaPlus /></p>
                 <p>Invite People</p>
@@ -988,7 +989,7 @@ const Live = () => {
 
             {/* setting $ logout,,,,,,,,,,,,,,,,,,,, */}
 
-            <div className="flex  justify-between py-4 ">
+            <div className="flex  justify-between py-4 px-1 ">
               {/* setting ,,,,,,,,,*/}
 
               <Link href={"/setting_p"} >
@@ -1018,11 +1019,11 @@ const Live = () => {
           </div>
 
           {/* Right_div........................................... */}
-          <div className="w-[75%] ">
+          <div className="md:w-[75%] ">
             {/* top ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,*/}
             <div>
               <Link href={"setting_p"} >
-                <div className="flex items-center gap-2 font-bold justify-end py-4 border-b shadow-xl pr-4   cursor-pointer ">
+                <div className="flex items-center gap-2 font-bold justify-end py-2 border-b shadow-xl pr-4   cursor-pointer ">
                   <img className='w-10 h-10 rounded-full  ' src="./live/my/ri_anas.jpg" alt="" />
                   <p>Profile</p>
                   <p className='cursor-pointer  '><TiArrowSortedDown /></p>

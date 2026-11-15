@@ -11,6 +11,9 @@ import { MdDarkMode } from "react-icons/md";
 import { IoMdNotifications } from "react-icons/io";
 import { FaMapMarkedAlt } from "react-icons/fa";
 import { FcAbout } from "react-icons/fc";
+import { IoArrowUndoSharp } from "react-icons/io5";
+import { FaArrowCircleLeft } from "react-icons/fa";
+import { FaHome } from "react-icons/fa";
 
 import { useTheme } from "@/Theme/ThemeProvider";
 
@@ -28,6 +31,7 @@ import {
     onSnapshot,
 } from "firebase/firestore";
 import { auth, db } from "@/firebase/firebaseConfig";
+import Link from "next/link";
 
 
 const Setting = () => {
@@ -666,19 +670,16 @@ const Setting = () => {
 
 
 
-
-
-
     return (
         <section className=' '>
             {/* Settings mother_div ...........................................*/}
-            <div className="container mx-auto  flex   ">
+            <div className="container mx-auto md:flex justify border  ">
                 {/* left_div _________________________*/}
-                <div className=" w-[30%] h-screen    ">
-                    <h2 className='flex items-center gap-2  h-14 font-bold text-2xl px-2 shadow-xl fixed border-b w-[461px]  ' ><AiTwotoneSetting className='text-4xl ' /> Settings </h2>
+                <div className=" md:w-[22%] h-screen md:block hidden  fixed   ">
+                    <h2 className='flex items-center gap-2  h-14 font-bold text-2xl px-2 shadow-xl  border-b border-green-500   ' ><AiTwotoneSetting className='text-4xl ' /> Settings </h2>
 
                     {/* Category______________________ */}
-                    <div className="p-2 pt-5 flex flex-col gap-3 shadow-2xl h-screen mt-14 fixed  w-[28%] ">
+                    <div className="p-2 pt-4 flex flex-col gap-2 shadow-2xl  mt-5  overflow-y-auto h-[470px]  ">
 
                         {/* Profile,,,,,,,,,,,,,,,,,,,,,,,,,,, */}
                         <div className="">
@@ -742,13 +743,20 @@ const Setting = () => {
 
                         </div>
 
+                        {/* Back to Home ,,,,,,,,,,,,,,,,,,,,,,,,, */}
+                        <div className=" border-t-2 pb-1 border-green-500 cursor-pointer  ">
+                            <h3 className='flex items-center gap-2 font-bold mt-4 '><IoArrowUndoSharp className="text-2xl " /> HOME </h3>
+
+
+                        </div>
+
                     </div>
 
 
                 </div>
 
                 {/* Right_div_________________________ */}
-                <div className=" w-[70%] border-l ">
+                <div className=" md:w-[75%] border-l md:ml-[30%] ">
                     {/* Search ,,,,,,,,,,,,,,,,,,,,,, */}
                     <div className=" h-14 shadow-xl flex  align-middle w-full border-b  ">
                         <input className=' px-4 outline-none text-xl w-full ' type="search" placeholder='Search..' />
@@ -818,7 +826,7 @@ const Setting = () => {
                                                 {name || "User"}
                                             </p>
 
-                                            <p className="text-black ">
+                                            <p className="text-black md:text-[14px] text-[12px]   ">
                                                 {email || "No email"}
                                             </p>
 
@@ -1359,7 +1367,7 @@ const Setting = () => {
 
                                     <div className="mt-3 space-y-2 pb-2 border-l pl-2">
 
-                                        
+
                                         <p className="font-semibold">
                                             Select friends who can see your location
                                         </p>
@@ -1416,7 +1424,7 @@ const Setting = () => {
                                             ))
 
                                         )}
-                                        
+
 
                                     </div>
                                 )}
@@ -1545,6 +1553,15 @@ const Setting = () => {
 
                                 </ul>
 
+                            </div>
+
+                            {/* Back to Home,,,,,,,,,,,,,,,,,,,,,,,,, */}
+                            <div className="">
+                                <h6 className="font-bold text-2xl mt-5 text-blue-500 flex gap-2 items-center  "> <FaHome /> Back to Home</h6>
+
+                                <Link href={"/home_p"} >
+                                    <p className="font-bold text-2xl mt-2 ml-10 " ><FaArrowCircleLeft /></p>
+                                </Link>
                             </div>
 
                         </div>
