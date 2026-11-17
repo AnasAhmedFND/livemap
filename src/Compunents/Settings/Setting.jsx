@@ -30,7 +30,7 @@ import {
     where,
     onSnapshot,
 } from "firebase/firestore";
-import { auth, db } from "@/firebase/firebaseConfig";
+import { auth, db } from "@/Firebase/firebaseConfig";
 import Link from "next/link";
 
 

@@ -1,7 +1,7 @@
 "use client"
 import React, { useEffect, useState } from 'react'
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { auth, db } from "@/firebase/firebaseConfig";
+import { auth, db } from "@/Firebase/firebaseConfig";
 
 import { FaLocationDot } from "react-icons/fa6";
 import { GoDotFill } from "react-icons/go";

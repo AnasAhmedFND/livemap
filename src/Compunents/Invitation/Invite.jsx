@@ -5,7 +5,7 @@ import { MdOutlineMarkEmailRead } from "react-icons/md";
 import { RxCross1 } from "react-icons/rx";
 
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
-import { db, auth } from "@/firebase/firebaseConfig";
+import { db, auth } from "@/Firebase/firebaseConfig";
 
 
 const Invite = ({ onClose }) => {

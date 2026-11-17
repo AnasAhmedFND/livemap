@@ -9,7 +9,7 @@ import {
     serverTimestamp
 } from "firebase/firestore";
 
-import { db, auth } from "@/firebase/firebaseConfig";
+import { db, auth } from "@/Firebase/firebaseConfig";
 
 
 const InvitationCard = ({ invitation }) => {
