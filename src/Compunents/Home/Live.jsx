@@ -16,7 +16,18 @@ import { RiMenuUnfoldFill } from "react-icons/ri";
 import { FiPlus } from "react-icons/fi";
 import { FaMinus } from "react-icons/fa";
 import { MdOutlineRefresh } from "react-icons/md";
-import Map from '@/Compunents/Google_map/Map'
+
+import dynamic from "next/dynamic";
+
+const Map = dynamic(
+  () => import("@/Compunents/Google_map/Map"),
+  {
+    ssr: false,
+    loading: () => <p>Loading map...</p>,
+  }
+);
+
+
 import Invite from '../Invitation/Invite';
 import InvitationCard from '../Invitation/InvitationCard';
 
