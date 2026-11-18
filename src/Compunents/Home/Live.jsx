@@ -175,6 +175,15 @@ const Live = () => {
 
   };
 
+
+  // friend_search.====================================
+  const [friendSearch, setFriendSearch] = useState("");
+  const [flyToLocation, setFlyToLocation] = useState(null);
+
+
+
+
+
   // Google_user________________________________________________________________
 
   useEffect(() => {
@@ -803,7 +812,7 @@ const Live = () => {
     return () => unsubscribe();
 
 
-  }, [user, connection, friendPrivacy, friendSelectedFriends, ]);
+  }, [user, connection, friendPrivacy, friendSelectedFriends,]);
 
   // Nobody/OnlyFriend/SelectFriend==============================
   useEffect(() => {
@@ -850,6 +859,37 @@ const Live = () => {
   }, [user, connection]);
 
 
+  // friend_searche...==========================================
+  const handleFriendSearch = (e) => {
+    e.preventDefault();
+
+    if (!connection || !friendLocation) {
+      alert("Friend's location is not available!");
+      return;
+    }
+
+    const friendName =
+      connection.user1Uid === user?.uid
+        ? connection.user2Name
+        : connection.user1Name;
+
+    if (
+      friendName.toLowerCase().includes(friendSearch.toLowerCase().trim())
+    ) {
+      setFlyToLocation({
+        lat: friendLocation.lat,
+        lng: friendLocation.lng,
+        zoom: 16,
+        timestamp: Date.now(),
+      });
+    } else {
+      alert("Friend not found!");
+    }
+  };
+
+
+
+
   return (
     <>
 
@@ -891,7 +931,7 @@ const Live = () => {
                   <div className="">
                     {/* User_Name__________________________________________
                   ___________________________________________________ */}
-                    <p className='font-bold '>
+                    <p className='font-bold uppercase ' >
                       {user?.displayName || "User"}
                     </p>
                     {/* Real_Location_place_Name___________________________________________
@@ -1032,18 +1072,67 @@ const Live = () => {
           {/* Right_div........................................... */}
           <div className="md:w-[75%] ">
             {/* top ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,*/}
-            <div>
+            <div className='flex justify-between items-center' >
+
+              {/* Friend Location Search_______________________________________ */}
+              <form
+                onSubmit={handleFriendSearch}
+                className=" flex gap-2 bg-white p-2 rounded-xl shadow-lg"
+              >
+                <input
+                  type="text"
+                  placeholder="Search friend..."
+                  value={friendSearch}
+                  onChange={(e) => setFriendSearch(e.target.value)}
+                  className="outline-none px-3 py-2 w-40 md:w-60 text-black"
+                />
+
+                <button
+                  type="submit"
+                  className="bg-blue-500 text-white px-4 py-2 rounded-lg"
+                >
+                  Search
+                </button>
+              </form>
+
+
               <Link href={"setting_p"} >
                 <div className="flex items-center gap-2 font-bold justify-end py-2 border-b shadow-xl pr-4   cursor-pointer ">
                   <img className='w-10 h-10 rounded-full  ' src="./live/my/ri_anas.jpg" alt="" />
-                  <p>Profile</p>
-                  <p className='cursor-pointer  '><TiArrowSortedDown /></p>
-                  <p className='cursor-pointer  '><BsThreeDotsVertical /></p>
+                  <p className=' md:block hidden' >Profile</p>
+                  <p className='cursor-pointer md:block hidden '><TiArrowSortedDown /></p>
+                  <p className='cursor-pointer md:block hidden '><BsThreeDotsVertical /></p>
                 </div>
 
               </Link>
 
             </div>
+
+
+
+            {/* Friend Location Search_______________________________________ */}
+            {/* <form
+              onSubmit={handleFriendSearch}
+              className="absolute top-4 left-4 z-[1000] flex gap-2 bg-white p-2 rounded-xl shadow-lg"
+            >
+              <input
+                type="text"
+                placeholder="Search friend..."
+                value={friendSearch}
+                onChange={(e) => setFriendSearch(e.target.value)}
+                className="outline-none px-3 py-2 w-40 md:w-60 text-black"
+              />
+
+              <button
+                type="submit"
+                className="bg-blue-500 text-white px-4 py-2 rounded-lg"
+              >
+                Search
+              </button>
+            </form> */}
+
+
+
 
 
             {/* live_map_ ___________________________*/}

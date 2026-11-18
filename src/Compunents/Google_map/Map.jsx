@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   MapContainer,
   TileLayer,
@@ -225,20 +225,24 @@ const createFriendIcon = (photo, name) =>
 
 
 // Search করার পরে map-কে নতুন location-এ নিয়ে যাবে
-function MapMover({ position }) {
-
+function MapMover({ position, zoom = 15 }) {
   const map = useMap();
 
-  if (position) {
-    map.flyTo(position, 15);
-  }
+  useEffect(() => {
+    if (position) {
+      map.flyTo(position, zoom, {
+        animate: true,
+        duration: 1.5,
+      });
+    }
+  }, [position, zoom, map]);
 
   return null;
 }
 
 //  props--------------------------------------------------------------------
 //  -------------------------------------------------------------------------  
-const Map = ({ friendLocation, friendPhoto, friendName, myPhoto, myName }) => {
+const Map = ({ friendLocation, friendPhoto, friendName, myPhoto, myName, flyToLocation }) => {
 
   // নিজের location রাখবে
   const [myLocation, setMyLocation] = useState(null);
@@ -320,7 +324,7 @@ const Map = ({ friendLocation, friendPhoto, friendName, myPhoto, myName }) => {
 
 
   // =================================================
-  // 🔍 SEARCH LOCATION
+  // 🔍 SEARCH LOCATION MyLocationMover 
   // =================================================
 
   const searchPlace = async (e) => {
@@ -476,7 +480,18 @@ const Map = ({ friendLocation, friendPhoto, friendName, myPhoto, myName }) => {
 
         {/* Search করার পরে map move করবে */}
 
-        <MapMover position={searchLocation} />
+        {/* Search করা place-এ map move করবে */}
+        <MapMover position={searchLocation} zoom={15} />
+
+        {/* Friend search করলে তার location-এ map move করবে */}
+        <MapMover
+          position={
+            flyToLocation
+              ? [flyToLocation.lat, flyToLocation.lng]
+              : null
+          }
+          zoom={flyToLocation?.zoom || 16}
+        />
 
         <MyLocationMover position={myLocation} />
 
@@ -550,7 +565,7 @@ const Map = ({ friendLocation, friendPhoto, friendName, myPhoto, myName }) => {
 
         style={{
           position: "absolute",
-          bottom: "40px",          
+          bottom: "40px",
           right: "20px",
           zIndex: 1000,
           padding: "10px 15px",
@@ -561,7 +576,7 @@ const Map = ({ friendLocation, friendPhoto, friendName, myPhoto, myName }) => {
           boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
           cursor: "pointer",
           fontWeight: "600",
-          
+
         }}
       >
 
