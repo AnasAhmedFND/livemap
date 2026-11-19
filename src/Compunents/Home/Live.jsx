@@ -1110,31 +1110,6 @@ const Live = () => {
 
 
 
-            {/* Friend Location Search_______________________________________ */}
-            {/* <form
-              onSubmit={handleFriendSearch}
-              className="absolute top-4 left-4 z-[1000] flex gap-2 bg-white p-2 rounded-xl shadow-lg"
-            >
-              <input
-                type="text"
-                placeholder="Search friend..."
-                value={friendSearch}
-                onChange={(e) => setFriendSearch(e.target.value)}
-                className="outline-none px-3 py-2 w-40 md:w-60 text-black"
-              />
-
-              <button
-                type="submit"
-                className="bg-blue-500 text-white px-4 py-2 rounded-lg"
-              >
-                Search
-              </button>
-            </form> */}
-
-
-
-
-
             {/* live_map_ ___________________________*/}
             <div className="relative ">
               <div className="h-full w-full   ">
@@ -1160,39 +1135,7 @@ const Live = () => {
 
               </div>
 
-              {/* Setalite_&_All_firend menu_________________ */}
-              {/* <div className="flex items-center justify-between  absolute top-10 z-20 w-full px-10 ">
-              <div className="flex items-center   ">
-                <p className='border py-2 px-4 bg-white font-bold rounded-l-lg cursor-pointer  '>Map</p>
-                <p className='border py-2 px-4 bg-[#dde3e4] rounded-r-lg cursor-pointer  '>Setalite </p>
-              </div>
-
-              <div className="flex items-center cursor-pointer  ">
-                <p className='border py-2 px-4 bg-white  rounded-l-lg '>All Friends</p>
-                <p className='border py-2 px-4 bg-[#dde3e4] rounded-r-lg font-bold text-2xl  '><RiMenuUnfoldFill /> </p>
-              </div>
-            </div> */}
-
-              {/* plus and minus_______________________________ */}
-              {/* <div className="flex items-center justify-between  absolute bottom-10 z-20 w-full px-10  ">
-              <div className=" bg-white  rounded-l-lg cursor-pointer ">
-                <p className='border rounded-t-lg py-3 font-bold px-4 '><FiPlus /> </p>
-                <p className='border rounded-b-lg py-3 px-4   '><FaMinus /> </p>
-
-              </div>
               
-              <div className="flex items-center  ">
-                <div className="border  px-4 bg-white rounded-l-lg cursor-pointer ">
-                  <small className='font-bold'>Live Updates</small > <br />
-                  <small> Auto-refresh on </small>
-                </div>
-
-                <p className='border py-2 px-4 bg-white text-[32px] rounded-r-lg cursor-pointer '><MdOutlineRefresh /></p>
-
-
-              </div>
-
-            </div> */}
 
             </div>
 
