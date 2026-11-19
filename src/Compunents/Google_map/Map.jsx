@@ -423,14 +423,14 @@ const Map = ({ friendLocation, friendPhoto, friendName, myPhoto, myName, flyToLo
           onChange={(e) => setSearch(e.target.value)}
 
           style={{
-            width: "220px",
+            width: "200px",
             padding: "10px 12px",
             borderRadius: "8px",
             border: "1px solid #ccc",
             background: "white",
             color: "#111",
             outline: "none",
-            marginLeft: "50px",
+            marginLeft: "40px",
           }}
         />
 
@@ -440,13 +440,13 @@ const Map = ({ friendLocation, friendPhoto, friendName, myPhoto, myName, flyToLo
           disabled={loading}
 
           style={{
-            padding: "10px 15px",
+            padding: "8px 12px",
             borderRadius: "8px",
             border: "none",
             background: "#2563eb",
             color: "white",
             cursor: "pointer",
-            fontWeight: "600",
+            fontWeight: "500",
           }}
         >
 
