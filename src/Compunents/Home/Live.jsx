@@ -183,7 +183,6 @@ const Live = () => {
 
 
 
-
   // Google_user________________________________________________________________
 
   useEffect(() => {
@@ -814,7 +813,7 @@ const Live = () => {
 
   }, [user, connection, friendPrivacy, friendSelectedFriends,]);
 
-  // Nobody/OnlyFriend/SelectFriend==============================
+  // Nobody/OnlyFriend/SelectFriend===============================
   useEffect(() => {
     if (!user || !connection) {
       setFriendPrivacy("friends");
