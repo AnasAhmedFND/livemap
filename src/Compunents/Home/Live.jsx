@@ -3,6 +3,8 @@ import React, { useEffect, useState } from 'react'
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth, db } from "@/Firebase/firebaseConfig";
 
+import VideoCall from "@/Compunents/Video/VideoCall";
+
 import { FaLocationDot } from "react-icons/fa6";
 import { GoDotFill } from "react-icons/go";
 import { FaPlus } from "react-icons/fa6";
@@ -888,6 +890,18 @@ const Live = () => {
 
 
 
+  // video Call===========================================================
+  const friendId =
+    connection?.user1Uid === user?.uid
+      ? connection?.user2Uid
+      : connection?.user1Uid;
+
+  const friendName =
+    connection?.user1Uid === user?.uid
+      ? connection?.user2Name
+      : connection?.user1Name;
+
+
 
   return (
     <>
@@ -1014,6 +1028,16 @@ const Live = () => {
                           {status.isLive ? "Live now" : status.text}
                         </span>
 
+                            {/* Video_Call===========================================
+                            ========================================================= */}
+                        {connection && user && (
+                          <VideoCall
+                            myId={user.uid}
+                            friendId={friendId}
+                            friendName={friendName}
+                          />
+                        )}
+
                       </div>
 
                     </div>
@@ -1132,9 +1156,11 @@ const Live = () => {
                   }
                 />
 
+                
+
               </div>
 
-              
+
 
             </div>
 
