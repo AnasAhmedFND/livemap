@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   MapContainer,
   TileLayer,
@@ -8,6 +8,11 @@ import {
   Popup,
   useMap,
 } from "react-leaflet";
+
+import { TbVideo } from "react-icons/tb";
+
+import { MdOutlineFlipCameraAndroid } from "react-icons/md";
+import { IoClose, IoVideocamOff } from "react-icons/io5";
 
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -256,6 +261,14 @@ const Map = ({ friendLocation, friendPhoto, friendName, myPhoto, myName, flyToLo
   // Search করার সময় loading
   const [loading, setLoading] = useState(false);
 
+  // Camera state
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [cameraStream, setCameraStream] = useState(null);
+  const [facingMode, setFacingMode] = useState("user");
+
+  // Video reference
+  const videoRef = useRef(null);
+
 
   // =================================================
   // 📍 MY LOCATION
@@ -389,6 +402,76 @@ const Map = ({ friendLocation, friendPhoto, friendName, myPhoto, myName, flyToLo
     }
 
   };
+
+  // 🎥 Start Camera=================================================
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: facingMode,
+        },
+        audio: false,
+      });
+
+      setCameraStream(stream);
+      setCameraOpen(true);
+    } catch (error) {
+      console.error("Camera Error:", error);
+      alert("Camera permission denied or camera unavailable!");
+    }
+  };
+
+  // 🎥 Show camera stream in video element===================
+  useEffect(() => {
+    if (videoRef.current && cameraStream) {
+      videoRef.current.srcObject = cameraStream;
+    }
+  }, [cameraStream, cameraOpen]);
+
+  // 🔄 Switch Camera==================================================
+  const switchCamera = async () => {
+    const newMode =
+      facingMode === "user" ? "environment" : "user";
+
+    // আগের camera বন্ধ করবে
+    if (cameraStream) {
+      cameraStream.getTracks().forEach((track) => track.stop());
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: newMode,
+        },
+        audio: false,
+      });
+
+      setCameraStream(stream);
+      setFacingMode(newMode);
+    } catch (error) {
+      console.error("Switch Camera Error:", error);
+      alert("Unable to switch camera!");
+    }
+  };
+
+  // ⛔ Stop Camera============================================
+  const stopCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach((track) => track.stop());
+    }
+
+    setCameraStream(null);
+    setCameraOpen(false);
+  };
+
+  // 🧹 Stop camera when component unmounts===============================
+  useEffect(() => {
+    return () => {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach((track) => track.stop());
+      }
+    };
+  }, [cameraStream]);
 
 
   return (
@@ -583,6 +666,97 @@ const Map = ({ friendLocation, friendPhoto, friendName, myPhoto, myName, flyToLo
         📍 My Location
 
       </button>
+
+      {/* Camara Show================================================== */}
+      {/* 🎥 Camera Button */}
+      <button
+        type="button"
+        onClick={startCamera}
+        disabled={cameraOpen}
+        style={{ zIndex: 1000 }}
+        className={`flex flex-col items-center justify-center text-center
+          border border-blue-200 text-blue-600 rounded-xl
+          bg-blue-100/90 w-[90px] h-[60px]
+          absolute md:left-10 left-2 md:bottom-[40px] bottom-[20px]
+          p-1 transition-all duration-200
+    ${cameraOpen
+            ? "opacity-50 cursor-not-allowed"
+            : "cursor-pointer hover:bg-blue-200"
+          }`}
+      >
+        <span className="text-2xl">
+          <TbVideo />
+        </span>
+
+        <span className="text-sm font-medium">
+          {cameraOpen ? "Camera On" : "Camera"}
+        </span>
+      </button>
+
+
+
+      {/* 🎥 Floating Camera Window */}
+      {cameraOpen && (
+        <div
+          className="absolute top-16 right-3 z-[2000]
+      w-[260px] sm:w-[300px]
+      bg-gray-900 rounded-2xl overflow-hidden
+      shadow-2xl border border-gray-700"
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between px-3 py-2 bg-gray-800">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+
+              <span className="text-white text-sm font-medium">
+                Camera Preview
+              </span>
+            </div>
+
+            <button
+              onClick={stopCamera}
+              className="text-white hover:bg-gray-700 rounded-full p-1"
+            >
+              <IoClose size={20} />
+            </button>
+          </div>
+
+          {/* Video Preview */}
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            className="w-full aspect-video object-cover bg-black"
+          />
+
+          {/* Controls */}
+          <div className="flex items-center justify-between p-2 gap-2">
+            <button
+              onClick={switchCamera}
+              className="flex items-center justify-center gap-1
+          text-white bg-blue-600 hover:bg-blue-700
+          rounded-lg px-3 py-2 text-sm flex-1"
+            >
+              <MdOutlineFlipCameraAndroid size={20} />
+              Switch
+            </button>
+
+            <button
+              onClick={stopCamera}
+              className="flex items-center justify-center gap-1
+          text-white bg-red-600 hover:bg-red-700
+          rounded-lg px-3 py-2 text-sm flex-1"
+            >
+              <IoVideocamOff size={20} />
+              Stop
+            </button>
+          </div>
+        </div>
+      )}
+
+
+
 
 
     </div>
