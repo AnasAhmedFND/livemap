@@ -23,6 +23,8 @@ export default function VideoCall({ myId, friendId, friendName }) {
   const peerRef = useRef(null);
   const streamRef = useRef(null);
 
+  const ringtoneRef = useRef(null);
+
   const [incomingCall, setIncomingCall] = useState(null);
   const [callId, setCallId] = useState(null);
   const [callStatus, setCallStatus] = useState("idle");
@@ -260,6 +262,13 @@ export default function VideoCall({ myId, friendId, friendName }) {
 
   const acceptCall = async () => {
 
+    // 🔕 Ringtone বন্ধ----------------------------------------------------!!!!!!!!!
+    if (ringtoneRef.current) {
+      ringtoneRef.current.pause();
+      ringtoneRef.current.currentTime = 0;
+      ringtoneRef.current = null;
+    }
+
     try {
 
       const id = incomingCall.id;
@@ -389,6 +398,13 @@ export default function VideoCall({ myId, friendId, friendName }) {
   // ==============================
 
   const stopCall = async () => {
+    
+    // 🔕 Ringtone ( ON ) --------------------------------------------------------------!!!!!!
+    if (ringtoneRef.current) {
+      ringtoneRef.current.pause();
+      ringtoneRef.current.currentTime = 0;
+      ringtoneRef.current = null;
+    }
 
     // Stop Camera + Microphone
 
@@ -448,10 +464,32 @@ export default function VideoCall({ myId, friendId, friendName }) {
   };
 
   // ==============================
-  // UI
+  // Ring_ton
   // ==============================
+  useEffect(() => {
+    if (incomingCall && callStatus === "idle") {
+      const audio = new Audio("/rifa2.mp3");
 
-   return (
+      audio.loop = true;
+      ringtoneRef.current = audio;
+
+      audio.play().catch((error) => {
+        console.log("Ringtone autoplay blocked:", error);
+      });
+    }
+
+    return () => {
+      if (ringtoneRef.current) {
+        ringtoneRef.current.pause();
+        ringtoneRef.current.currentTime = 0;
+        ringtoneRef.current = null;
+      }
+    };
+  }, [incomingCall, callStatus]);
+
+
+
+  return (
     <>
       {/* Incoming Call Notification */}
       {incomingCall && callStatus === "idle" && (
