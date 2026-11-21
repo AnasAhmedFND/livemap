@@ -469,7 +469,7 @@ export default function VideoCall({ myId, friendId, friendName }) {
   // ==============================
   useEffect(() => {
     if (incomingCall && callStatus === "idle") {
-      const audio = new Audio("/rifa.mp3");
+      const audio = new Audio("/rifa2.mp3");
 
       audio.loop = true;
       ringtoneRef.current = audio;
