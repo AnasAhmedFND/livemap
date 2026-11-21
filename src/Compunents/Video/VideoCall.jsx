@@ -451,118 +451,109 @@ export default function VideoCall({ myId, friendId, friendName }) {
   // UI
   // ==============================
 
-  return (
-
-    <div className="p-3">
-
-      {/* Incoming Call */}
-
+   return (
+    <>
+      {/* Incoming Call Notification */}
       {incomingCall && callStatus === "idle" && (
-
-        <div className="bg-green-100 p-4 rounded-xl mb-3">
-
+        <div className="bg-green-100 p-3 rounded-xl shadow-md mb-3">
           <p className="font-bold">
-
             📞 Incoming Video Call
-
           </p>
 
           <button
             onClick={acceptCall}
             className="bg-green-600 text-white px-4 py-2 rounded-lg mt-2"
           >
-
             Accept
-
           </button>
-
         </div>
-
       )}
 
-      {/* Call Button */}
-
+      {/* Video Call Button - আগের জায়গায় থাকবে */}
       {callStatus === "idle" && !incomingCall && (
-
         <button
           onClick={startCall}
-          className="bg-blue-600 text-white p-2 rounded-lg text-[10px] "
+          className="bg-blue-600 text-white p-2 rounded-lg text-[10px]"
         >
-
           📹 Video Call
-
         </button>
-
       )}
 
-      {/* Video Screens */}
-
+      {/* Floating Video Window */}
       {callStatus !== "idle" && (
+        <div
+          className="
+            fixed
+            md:right-48
+            right-3
+            md:bottom-20
+            bottom-3
+            z-[9999]
+            w-[95vw]
+            max-w-[600px]
+            bg-[#1e293b]
+            text-white
+            rounded-2xl
+            shadow-2xl
+            border border-gray-600
+            p-3
+          "
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h3 className="font-bold text-sm">
+                Video Call
+              </h3>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+              <p className="text-xs text-green-400">
+                {callStatus}
+              </p>
+            </div>
 
-          {/* My Video */}
-
-          <div>
-
-            <p className="text-sm mb-1">You</p>
-
-            <video
-              ref={localVideoRef}
-              autoPlay
-              muted
-              playsInline
-              className="w-full rounded-xl bg-black"
-            />
-
+            <button
+              onClick={stopCall}
+              className="bg-red-500 hover:bg-red-600 px-3 py-1.5 rounded-lg text-sm"
+            >
+              ❌ End
+            </button>
           </div>
 
-          {/* Friend Video */}
+          {/* Video Screens */}
+          <div className="grid grid-cols-2 gap-2">
 
-          <div>
+            {/* My Video */}
+            <div className="relative md:h-auto h-[200px] ">
+              <video
+                ref={localVideoRef}
+                autoPlay
+                muted
+                playsInline
+                className="w-full aspect-video object-cover rounded-xl bg-black md:h-auto h-full "
+              />
 
-            <p className="text-sm mb-1">{friendName || "Friend"}</p>
+              <span className="absolute bottom-2 left-2 bg-black/60 px-2 py-1 rounded text-xs">
+                You
+              </span>
+            </div>
 
-            <video
-              ref={remoteVideoRef}
-              autoPlay
-              playsInline
-              className="w-full rounded-xl bg-black"
-            />
+            {/* Friend Video */}
+            <div className="relative md:h-auto h-[200px] ">
+              <video
+                ref={remoteVideoRef}
+                autoPlay
+                playsInline
+                className="w-full aspect-video object-cover rounded-xl bg-black md:h-auto h-full "
+              />
+
+              <span className="absolute bottom-2 left-2 bg-black/60 px-2 py-1 rounded text-xs">
+                {friendName || "Friend"}
+              </span>
+            </div>
 
           </div>
-
         </div>
-
       )}
-
-      {/* Call Status */}
-
-      {callStatus !== "idle" && (
-
-        <div className="mt-3">
-
-          <p className="mb-2">
-
-            Status: {callStatus}
-
-          </p>
-
-          <button
-            onClick={stopCall}
-            className="bg-red-600 text-white px-4 py-2 rounded-lg"
-          >
-
-            ❌ End Call
-
-          </button>
-
-        </div>
-
-      )}
-
-    </div>
-
+    </>
   );
-
 }
