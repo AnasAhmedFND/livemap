@@ -970,7 +970,7 @@ const Live = () => {
 
               {/* Pepole(All),,,,,,,,,,,,,,,, */}
 
-              <article className=' pt-2 h-[200px] '>
+              <article className=' pt-2 h-[200px] overflow-auto '>
 
                 <h4 className='font-bold text-lg flex justify-center text-[#2d3e53]'>
                   People({connection ? 1 : 0})
@@ -1046,7 +1046,11 @@ const Live = () => {
 
                 )}
 
+                
+
               </article>
+
+              
 
 
               {/* invite Pepole,,,,,,,,,,,, */}
