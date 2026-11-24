@@ -923,7 +923,9 @@ const Live = () => {
 
             {/* my, people & invite_ div ||||||||||||||||||||||||*/}
             <div className="shadow-xl p-4 rounded-lg ">
+              
               {/* my_location ,,,,,,,,,,*/}
+
               <article className='  border-b pb-2 '>
                 <h4 className='font-bold text-lg flex justify-center text-[#2d5350] '>My Location</h4>
 
@@ -973,7 +975,7 @@ const Live = () => {
               <article className=' pt-2 h-[200px] overflow-auto '>
 
                 <h4 className='font-bold text-lg flex justify-center text-[#2d3e53]'>
-                  People({connection ? 1 : 0})
+                  Friends({connection ? 1 : 0})
                 </h4>
 
                 {connection && (
