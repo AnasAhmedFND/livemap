@@ -247,7 +247,7 @@ function MapMover({ position, zoom = 15 }) {
 
 //  props--------------------------------------------------------------------
 //  -------------------------------------------------------------------------  
-const Map = ({ friendLocation, friendPhoto, friendName, myPhoto, myName, flyToLocation }) => {
+const Map = ({ friendLocations = [], myPhoto, myName, flyToLocation }) => {
 
   // নিজের location রাখবে
   const [myLocation, setMyLocation] = useState(null);
@@ -610,29 +610,33 @@ const Map = ({ friendLocation, friendPhoto, friendName, myPhoto, myName, flyToLo
           🟣 FRIEND LOCATION MARKER
           ================================================= */}
 
-        {friendLocation && (
+        {/* FRIEND LOCATION MARKERS */}
 
-          <Marker
-            position={[
-              friendLocation.lat,
-              friendLocation.lng
-            ]}
-            icon={createFriendIcon(friendPhoto, friendName)}
-          >
+        {friendLocations.map((friend) => {
+          if (!friend.location) return null;
 
-            <Popup>
-
-              <strong>📍 {friendName || "Friend"}</strong>
-
-              <br />
-
-              🟢 Live Now
-
-            </Popup>
-
-          </Marker>
-
-        )}
+          return (
+            <Marker
+              key={friend.uid}
+              position={[
+                friend.location.lat,
+                friend.location.lng,
+              ]}
+              icon={createFriendIcon(
+                friend.photo,
+                friend.name
+              )}
+            >
+              <Popup>
+                <strong>📍 {friend.name}</strong>
+                <br />
+                {friend.isLive ? "🟢 Live Now" : "⚪ Offline"}
+                <br />
+                {friend.place || "Location unavailable"}
+              </Popup>
+            </Marker>
+          );
+        })}
 
 
       </MapContainer>
@@ -699,9 +703,9 @@ const Map = ({ friendLocation, friendPhoto, friendName, myPhoto, myName, flyToLo
       {cameraOpen && (
         <div
           className="absolute top-16 right-3 z-[2000]
-      w-[260px] sm:w-[300px]
-      bg-gray-900 rounded-2xl overflow-hidden
-      shadow-2xl border border-gray-700"
+           w-[260px] sm:w-[300px]
+         bg-gray-900 rounded-2xl overflow-hidden
+           shadow-2xl border border-gray-700"
         >
           {/* Header */}
           <div className="flex items-center justify-between px-3 py-2 bg-gray-800">

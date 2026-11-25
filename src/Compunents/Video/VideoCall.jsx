@@ -227,34 +227,38 @@ export default function VideoCall({ myId, friendId, friendName }) {
 
   // ==============================
   // Incoming Call Listener
+  // Only receive call from this friend
   // ==============================
 
   useEffect(() => {
-
-    if (!myId) return;
+    if (!myId || !friendId) return;
 
     const q = query(
       collection(db, "videoCalls"),
       where("calleeId", "==", myId),
+      where("callerId", "==", friendId),
       where("status", "==", "calling")
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
 
-      snapshot.forEach((document) => {
+      if (snapshot.empty) {
+        setIncomingCall(null);
+        return;
+      }
 
-        setIncomingCall({
-          id: document.id,
-          ...document.data(),
-        });
+      const document = snapshot.docs[0];
 
+      setIncomingCall({
+        id: document.id,
+        ...document.data(),
       });
 
     });
 
     return () => unsubscribe();
 
-  }, [myId]);
+  }, [myId, friendId]);
 
   // ==============================
   // Accept Call
@@ -267,6 +271,17 @@ export default function VideoCall({ myId, friendId, friendName }) {
       ringtoneRef.current.pause();
       ringtoneRef.current.currentTime = 0;
       ringtoneRef.current = null;
+    }
+    
+
+    if (
+      !incomingCall ||
+      incomingCall.calleeId !== myId ||
+      incomingCall.callerId !== friendId
+    ) {
+      console.error("This call is not intended for this friend.");
+      setIncomingCall(null);
+      return;
     }
 
     try {
@@ -397,9 +412,9 @@ export default function VideoCall({ myId, friendId, friendName }) {
   // End Call
   // ==============================
 
-  
+
   const stopCall = async () => {
-    
+
     // 🔕 Ringtone ( ON ) --------------------------------------------------------------!!!!!!
     if (ringtoneRef.current) {
       ringtoneRef.current.pause();

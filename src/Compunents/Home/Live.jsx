@@ -70,25 +70,23 @@ const Live = () => {
   // Invitationcard_call__________________________________________
   const [invitation, setInvitation] = useState(null);
 
-  // All_People_Add_______________________________________________
-  const [connection, setConnection] = useState(null);
-
   // friendLocation_______________________________________________
-  const [friendLocation, setFriendLocation] = useState(null);
+
+  const [friendLocations, setFriendLocations] = useState([]);
+
   const [shareLocation, setShareLocation] = useState(true);
   const [highAccuracy, setHighAccuracy] = useState(true);
   const [updateInterval, setUpdateInterval] = useState(15000);
-  const [friendPrivacy, setFriendPrivacy] = useState("friends");
+  // Friend_list_____________________________________________________
+  const [frnd, setFrnd] = useState([])
 
-  // Privacy SelectedFriend______________________________________
-  const [friendSelectedFriends, setFriendSelectedFriends] = useState([]);
+  // ⏱️ Refresh friend last-seen display periodically
+  const [currentTime, setCurrentTime] = useState(Date.now());
+
 
 
   // my_LocationPlace_Name________________________________________
   const [myPlaceName, setMyPlaceName] = useState("Getting location...");
-  // Frien_dLocationPlace_Name__________________________________
-  const [friendPlaceName, setFriendPlaceName] = useState("Location loading...");
-
   // friend_offline-&-Online________________________________________
 
   console.log("Google/Firebase Display Name:", user?.displayName);
@@ -184,6 +182,15 @@ const Live = () => {
 
 
 
+
+  // ⏱️ Refresh the Live / Last seen text every 15 seconds
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 15000);
+
+    return () => clearInterval(timer);
+  }, []);
 
   // Google_user________________________________________________________________
 
@@ -464,141 +471,212 @@ const Live = () => {
 
   }, [user]);
 
-  // Firebase থেকে connection_People_Add_________________________________________
-
+  // 🔵 Connected Friends Listener (normalized friend objects)
   useEffect(() => {
-    if (!user?.uid) return;
+    if (!user?.uid) {
+      setFrnd([]);
+      return;
+    }
 
-    const q = query(
-      collection(db, "connections"),
-      where("user1Uid", "==", user.uid)
-    );
+    const connectionsRef = collection(db, "connections");
+    const q1 = query(connectionsRef, where("user1Uid", "==", user.uid));
+    const q2 = query(connectionsRef, where("user2Uid", "==", user.uid));
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    let friendsFromQ1 = [];
+    let friendsFromQ2 = [];
 
-      if (!snapshot.empty) {
+    const updateFriends = () => {
+      const allConnections = [...friendsFromQ1, ...friendsFromQ2];
+      const friendList = allConnections.map((connection) => {
+        if (connection.user1Uid === user.uid) {
+          return {
+            uid: connection.user2Uid,
+            name: connection.user2Name || "Unknown User",
+            photo: connection.user2Photo || "",
+          };
+        }
 
-        const doc = snapshot.docs[0];
+        return {
+          uid: connection.user1Uid,
+          name: connection.user1Name || "Unknown User",
+          photo: connection.user1Photo || "",
+        };
+      }).filter((friend) => friend.uid);
 
-        setConnection({
-          id: doc.id,
-          ...doc.data(),
-        });
+      const uniqueFriends = friendList.filter(
+        (friend, index, self) =>
+          index === self.findIndex((item) => item.uid === friend.uid)
+      );
 
-        console.log("Connection found:", doc.data());
+      setFrnd(uniqueFriends);
+      console.log("Live Friends:", uniqueFriends);
+    };
 
-      } else {
+    const unsubscribe1 = onSnapshot(q1, (snapshot) => {
+      friendsFromQ1 = snapshot.docs.map((doc) => doc.data());
+      updateFriends();
+    }, (error) => console.error("Connections listener (user1) error:", error));
 
-        // User যদি user1 না হয়ে user2 হয়
-        const q2 = query(
-          collection(db, "connections"),
-          where("user2Uid", "==", user.uid)
-        );
+    const unsubscribe2 = onSnapshot(q2, (snapshot) => {
+      friendsFromQ2 = snapshot.docs.map((doc) => doc.data());
+      updateFriends();
+    }, (error) => console.error("Connections listener (user2) error:", error));
 
-        const unsubscribe2 = onSnapshot(q2, (snapshot2) => {
+    return () => {
+      unsubscribe1();
+      unsubscribe2();
+    };
+  }, [user]);
 
-          if (!snapshot2.empty) {
+  // 🟢 Listen to each connected friend's live location
+  useEffect(() => {
+    if (!user?.uid || frnd.length === 0) {
+      setFriendLocations([]);
+      return;
+    }
 
-            const doc = snapshot2.docs[0];
+    const unsubscribers = [];
 
-            setConnection({
-              id: doc.id,
-              ...doc.data(),
+    frnd.forEach((friend) => {
+      const friendUid = friend.uid;
+      if (!friendUid) return;
+
+      const unsubscribe = onSnapshot(
+        doc(db, "locations", friendUid),
+        async (snapshot) => {
+          if (!snapshot.exists()) {
+            setFriendLocations((prev) => {
+              const offlineFriend = {
+                uid: friendUid,
+                name: friend.name,
+                photo: friend.photo,
+                location: null,
+                place: "Location unavailable",
+                isLive: false,
+              };
+              const exists = prev.some((item) => item.uid === friendUid);
+              return exists
+                ? prev.map((item) => item.uid === friendUid ? offlineFriend : item)
+                : [...prev, offlineFriend];
             });
-
-            console.log("Connection found:", doc.data());
-
-          } else {
-            setConnection(null);
-            console.log("No connection found");
+            return;
           }
 
-        });
+          const data = snapshot.data();
+          const location = {
+            lat: data.lat,
+            lng: data.lng,
+            accuracy: data.accuracy,
+            updatedAt: data.updatedAt,
+          };
 
-        return () => unsubscribe2();
-      }
+          const place = await getPlaceName(data.lat, data.lng);
+          const updatedAt = data.updatedAt?.toDate
+            ? data.updatedAt.toDate()
+            : new Date(data.updatedAt);
+          const isLive = Number.isFinite(updatedAt.getTime()) &&
+            Date.now() - updatedAt.getTime() < 60000;
 
+          const newFriend = {
+            uid: friendUid,
+            name: friend.name,
+            photo: friend.photo,
+            location,
+            place,
+            isLive,
+          };
+
+          setFriendLocations((prev) => {
+            const exists = prev.some((item) => item.uid === friendUid);
+            return exists
+              ? prev.map((item) => item.uid === friendUid ? newFriend : item)
+              : [...prev, newFriend];
+          });
+        },
+        (error) => console.error("Friend location error:", friendUid, error)
+      );
+
+      unsubscribers.push(unsubscribe);
     });
 
-    return () => unsubscribe();
-
-  }, [user]);
+    return () => unsubscribers.forEach((unsubscribe) => unsubscribe());
+  }, [user, frnd]);
 
   // =================================================
   // 🟣 FRIEND REALTIME LOCATION
   // =================================================
 
-  useEffect(() => {
+  // useEffect(() => {
 
-    if (!user || !connection) {
-      setFriendLocation(null);
-      return;
-    }
+  //   if (!user || !connection) {
+  //     setFriendLocation(null);
+  //     return;
+  //   }
 
-    const friendUid =
-      connection.user1Uid === user.uid
-        ? connection.user2Uid
-        : connection.user1Uid;
+  //   const friendUid =
+  //     connection.user1Uid === user.uid
+  //       ? connection.user2Uid
+  //       : connection.user1Uid;
 
-    if (!friendUid) {
-      return;
-    }
+  //   if (!friendUid) {
+  //     return;
+  //   }
 
-    console.log("Listening to friend location:", friendUid);
+  //   console.log("Listening to friend location:", friendUid);
 
-    const locationRef = doc(
-      db,
-      "locations",
-      friendUid
-    );
+  //   const locationRef = doc(
+  //     db,
+  //     "locations",
+  //     friendUid
+  //   );
 
-    const unsubscribe = onSnapshot(
-      locationRef,
+  //   const unsubscribe = onSnapshot(
+  //     locationRef,
 
-      (snapshot) => {
+  //     (snapshot) => {
 
-        if (snapshot.exists()) {
+  //       if (snapshot.exists()) {
 
-          const data = snapshot.data();
+  //         const data = snapshot.data();
 
-          console.log("Friend location:", data);
+  //         console.log("Friend location:", data);
 
-          setFriendLocation({
-            lat: data.lat,
-            lng: data.lng,
-            accuracy: data.accuracy,
-          });
+  //         setFriendLocation({
+  //           lat: data.lat,
+  //           lng: data.lng,
+  //           accuracy: data.accuracy,
+  //         });
 
-          // 📍 Get friend's real place name
-          getPlaceName(data.lat, data.lng).then((place) => {
+  //         // 📍 Get friend's real place name
+  //         getPlaceName(data.lat, data.lng).then((place) => {
 
-            setFriendPlaceName(place);
+  //           setFriendPlaceName(place);
 
-          });
+  //         });
 
-        } else {
+  //       } else {
 
-          console.log("Friend location not found");
+  //         console.log("Friend location not found");
 
-          setFriendLocation(null);
+  //         setFriendLocation(null);
 
-        }
+  //       }
 
-      },
+  //     },
 
-      (error) => {
+  //     (error) => {
 
-        console.error(
-          "Friend location listener error:",
-          error
-        );
+  //       console.error(
+  //         "Friend location listener error:",
+  //         error
+  //       );
 
-      }
-    );
+  //     }
+  //   );
 
-    return () => unsubscribe();
+  //   return () => unsubscribe();
 
-  }, [user, connection]);
+  // }, [user, connection]);
 
 
   // Location_trecing========================================================
@@ -645,261 +723,201 @@ const Live = () => {
   }, [user]);
 
   // updatedTime_Offline & Online===========================================
-  const getFriendStatus = () => {
-    if (!friendLocation?.updatedAt) {
-      return {
-        text: "Offline",
-        isLive: false,
-      };
-    }
+  // const getFriendStatus = () => {
+  //   if (!friendLocation?.updatedAt) {
+  //     return {
+  //       text: "Offline",
+  //       isLive: false,
+  //     };
+  //   }
 
-    let updatedTime;
+  //   let updatedTime;
 
-    // Firestore Timestamp হলে
-    if (typeof friendLocation.updatedAt?.toDate === "function") {
-      updatedTime = friendLocation.updatedAt.toDate();
-    } else {
-      // Date/string হলে
-      updatedTime = new Date(friendLocation.updatedAt);
-    }
+  //   // Firestore Timestamp হলে
+  //   if (typeof friendLocation.updatedAt?.toDate === "function") {
+  //     updatedTime = friendLocation.updatedAt.toDate();
+  //   } else {
+  //     // Date/string হলে
+  //     updatedTime = new Date(friendLocation.updatedAt);
+  //   }
 
-    const now = new Date();
+  //   const now = new Date();
 
-    const differenceInSeconds = Math.floor(
-      (now.getTime() - updatedTime.getTime()) / 1000
-    );
+  //   const differenceInSeconds = Math.floor(
+  //     (now.getTime() - updatedTime.getTime()) / 1000
+  //   );
 
-    // গত 1 মিনিটের মধ্যে location update হলে
-    if (differenceInSeconds < 60) {
-      return {
-        text: "Live now",
-        isLive: true,
-      };
-    }
+  //   // গত 1 মিনিটের মধ্যে location update হলে
+  //   if (differenceInSeconds < 60) {
+  //     return {
+  //       text: "Live now",
+  //       isLive: true,
+  //     };
+  //   }
 
-    const differenceInMinutes = Math.floor(
-      differenceInSeconds / 60
-    );
+  //   const differenceInMinutes = Math.floor(
+  //     differenceInSeconds / 60
+  //   );
 
-    // 1 hour এর কম হলে
-    if (differenceInMinutes < 60) {
-      return {
-        text: `${differenceInMinutes} ${differenceInMinutes === 1 ? "minute" : "minutes"
-          } ago`,
-        isLive: false,
-      };
-    }
+  //   // 1 hour এর কম হলে
+  //   if (differenceInMinutes < 60) {
+  //     return {
+  //       text: `${differenceInMinutes} ${differenceInMinutes === 1 ? "minute" : "minutes"
+  //         } ago`,
+  //       isLive: false,
+  //     };
+  //   }
 
-    const differenceInHours = Math.floor(
-      differenceInMinutes / 60
-    );
+  //   const differenceInHours = Math.floor(
+  //     differenceInMinutes / 60
+  //   );
 
-    return {
-      text: `${differenceInHours} ${differenceInHours === 1 ? "hour" : "hours"
-        } ago`,
-      isLive: false,
-    };
-  };
-  const status = getFriendStatus();
+  //   return {
+  //     text: `${differenceInHours} ${differenceInHours === 1 ? "hour" : "hours"
+  //       } ago`,
+  //     isLive: false,
+  //   };
+  // };
+  // const status = getFriendStatus();
 
   // Firebase realtime data Update_ in people Card_(friend_location)==============
-  useEffect(() => {
+  // useEffect(() => {
 
-    if (!user || !connection) {
-      setFriendLocation(null);
-      return;
-    }
-
-
-    // -----------------------------------------
-    // 👤 FIND FRIEND UID
-    // -----------------------------------------
-
-    const friendUid =
-      connection.user1Uid === user.uid
-        ? connection.user2Uid
-        : connection.user1Uid;
+  //   if (!user || !connection) {
+  //     setFriendLocation(null);
+  //     return;
+  //   }
 
 
-    if (!friendUid) {
-      setFriendLocation(null);
-      return;
-    }
+  //   // -----------------------------------------
+  //   // 👤 FIND FRIEND UID
+  //   // -----------------------------------------
+
+  //   const friendUid =
+  //     connection.user1Uid === user.uid
+  //       ? connection.user2Uid
+  //       : connection.user1Uid;
 
 
-    // -----------------------------------------
-    // 📍 REALTIME FRIEND LOCATION
-    // -----------------------------------------
-
-    const unsubscribe = onSnapshot(
-
-      doc(db, "locations", friendUid),
-
-      (locationDoc) => {
-
-        if (locationDoc.exists()) {
-
-          // 🔒 NOBODY PRIVACY
-
-          if (friendPrivacy === "nobody") {
-            console.log("🔒 FRIEND PRIVACY VALUE:", friendPrivacy);
+  //   if (!friendUid) {
+  //     setFriendLocation(null);
+  //     return;
+  //   }
 
 
-            console.log(
-              "🔒 Friend location is hidden"
-            );
+  //   // -----------------------------------------
+  //   // 📍 REALTIME FRIEND LOCATION
+  //   // -----------------------------------------
 
-            setFriendLocation(null);
-            setFriendPlaceName("Location hidden");
+  //   const unsubscribe = onSnapshot(
 
-            return;
-          }
+  //     doc(db, "locations", friendUid),
 
-          // 🔒 selectedFriends_Privacy
+  //     (locationDoc) => {
 
-          if (
-            friendPrivacy === "selected" &&
-            !friendSelectedFriends.includes(user.uid)
-          ) {
+  //       if (locationDoc.exists()) {
 
-            console.log(
-              "🔒 You are not selected to see this location"
-            );
+  //         // 🔒 NOBODY PRIVACY
 
-            setFriendLocation(null);
-            setFriendPlaceName("Location hidden");
-
-            return;
-          }
+  //         if (friendPrivacy === "nobody") {
+  //           console.log("🔒 FRIEND PRIVACY VALUE:", friendPrivacy);
 
 
-          const locationData = locationDoc.data();
+  //           console.log(
+  //             "🔒 Friend location is hidden"
+  //           );
 
-          console.log(
-            "📍 Friend location updated:",
-            locationData
-          );
+  //           setFriendLocation(null);
+  //           setFriendPlaceName("Location hidden");
 
-          setFriendLocation(locationData);
+  //           return;
+  //         }
 
+  //         // 🔒 selectedFriends_Privacy
 
+  //         if (
+  //           friendPrivacy === "selected" &&
+  //           !friendSelectedFriends.includes(user.uid)
+  //         ) {
 
-        } else {
+  //           console.log(
+  //             "🔒 You are not selected to see this location"
+  //           );
 
-          console.log(
-            "❌ Friend location not found"
-          );
+  //           setFriendLocation(null);
+  //           setFriendPlaceName("Location hidden");
 
-          setFriendLocation(null);
-
-        }
-
-      },
-
-      (error) => {
-
-        console.error(
-          "❌ Friend location listener error:",
-          error
-        );
-
-        setFriendLocation(null);
-
-      }
-
-    );
+  //           return;
+  //         }
 
 
-    return () => unsubscribe();
+  //         const locationData = locationDoc.data();
+
+  //         console.log(
+  //           "📍 Friend location updated:",
+  //           locationData
+  //         );
+
+  //         setFriendLocation(locationData);
 
 
-  }, [user, connection, friendPrivacy, friendSelectedFriends,]);
 
-  // Nobody/OnlyFriend/SelectFriend===============================
-  useEffect(() => {
-    if (!user || !connection) {
-      setFriendPrivacy("friends");
-      return;
-    }
+  //       } else {
 
-    const friendUid =
-      connection.user1Uid === user.uid
-        ? connection.user2Uid
-        : connection.user1Uid;
+  //         console.log(
+  //           "❌ Friend location not found"
+  //         );
 
-    if (!friendUid) return;
+  //         setFriendLocation(null);
 
-    const unsubscribe = onSnapshot(
-      doc(db, "users", friendUid),
-      (friendUserDoc) => {
-        if (friendUserDoc.exists()) {
-          const data = friendUserDoc.data();
+  //       }
 
-          setFriendPrivacy(
-            data.locationPrivacy || "friends"
-          );
+  //     },
 
-          setFriendSelectedFriends(
-            data.selectedFriends || []
-          );
+  //     (error) => {
 
-        }
-      },
-      (error) => {
-        console.error(
-          "Friend privacy listener error:",
-          error
-        );
+  //       console.error(
+  //         "❌ Friend location listener error:",
+  //         error
+  //       );
 
-        setFriendPrivacy("friends");
-      }
-    );
+  //       setFriendLocation(null);
 
-    return () => unsubscribe();
+  //     }
 
-  }, [user, connection]);
+  //   );
 
+
+  //   return () => unsubscribe();
+
+
+  // }, [user, connection, friendPrivacy, friendSelectedFriends,]);
+
+  // Note: per-friend location privacy must be enforced in Firestore rules
+  // and integrated into the friend location listener before production.
 
   // friend_searche...==========================================
   const handleFriendSearch = (e) => {
     e.preventDefault();
 
-    if (!connection || !friendLocation) {
+    const searchedFriend = friendLocations.find((friend) =>
+      friend.name
+        ?.toLowerCase()
+        .includes(friendSearch.toLowerCase().trim())
+    );
+
+    if (!searchedFriend?.location) {
       alert("Friend's location is not available!");
       return;
     }
 
-    const friendName =
-      connection.user1Uid === user?.uid
-        ? connection.user2Name
-        : connection.user1Name;
-
-    if (
-      friendName.toLowerCase().includes(friendSearch.toLowerCase().trim())
-    ) {
-      setFlyToLocation({
-        lat: friendLocation.lat,
-        lng: friendLocation.lng,
-        zoom: 16,
-        timestamp: Date.now(),
-      });
-    } else {
-      alert("Friend not found!");
-    }
+    setFlyToLocation({
+      lat: searchedFriend.location.lat,
+      lng: searchedFriend.location.lng,
+      zoom: 16,
+      timestamp: Date.now(),
+    });
   };
-
-
-
-  // video Call===========================================================
-  const friendId =
-    connection?.user1Uid === user?.uid
-      ? connection?.user2Uid
-      : connection?.user1Uid;
-
-  const friendName =
-    connection?.user1Uid === user?.uid
-      ? connection?.user2Name
-      : connection?.user1Name;
 
 
 
@@ -923,7 +941,7 @@ const Live = () => {
 
             {/* my, people & invite_ div ||||||||||||||||||||||||*/}
             <div className="shadow-xl p-4 rounded-lg ">
-              
+
               {/* my_location ,,,,,,,,,,*/}
 
               <article className='  border-b pb-2 '>
@@ -970,89 +988,100 @@ const Live = () => {
 
 
 
-              {/* Pepole(All),,,,,,,,,,,,,,,, */}
+              {/* friend(All),,,,,,,,,,,,,,,, */}
 
-              <article className=' pt-2 h-[200px] overflow-auto '>
+              <article className="pt-2 h-[200px] overflow-auto">
 
-                <h4 className='font-bold text-lg flex justify-center text-[#2d3e53]'>
-                  Friends({connection ? 1 : 0})
+                <h4 className="font-bold text-lg flex justify-center text-[#2d3e53]">
+                  Friends({frnd.length})
                 </h4>
 
-                {connection && (
 
-                  <div className="flex gap-4 mt-2  overflow-auto   ">
 
-                    <div className="relative">
+                {frnd.map((friend) => {
+                  const friendData = friendLocations.find(
+                    (item) => item.uid === friend.uid
+                  );
 
-                      <img
-                        className='w-14 h-14 rounded-full'
-                        src={
-                          connection.user1Uid === user?.uid
-                            ? connection.user2Photo
-                            : connection.user1Photo
-                        }
-                        alt=""
-                      />
+                  const updatedAt = friendData?.location?.updatedAt;
+                  const lastUpdate = updatedAt?.toDate
+                    ? updatedAt.toDate().getTime()
+                    : updatedAt
+                      ? new Date(updatedAt).getTime()
+                      : 0;
 
-                      <p className='absolute top-0 left-10 font-bold text-3xl text-green-500'>
-                        <GoDotFill />
-                      </p>
+                  const isFriendLive =
+                    lastUpdate > 0 &&
+                    Number.isFinite(lastUpdate) &&
+                    currentTime - lastUpdate < 60000;
 
-                    </div>
-
-                    <div>
-
-                      <p className='font-bold'>
-                        {connection.user1Uid === user?.uid
-                          ? connection.user2Name
-                          : connection.user1Name}
-                      </p>
-                      {/* friend_map_Place-name_________________________________________ */}
-
-                      <small> {friendPlaceName} </small>
-
-                      <div className="flex items-center gap-2 text-sm">
-
-                        <span
-                          className={`w-2.5 h-2.5 rounded-full ${status.isLive
-                            ? "bg-green-500"
-                            : "bg-gray-400"
-                            }`}
-                        />
-
-                        <span
-                          className={
-                            status.isLive
-                              ? "text-green-500"
-                              : "text-gray-400"
-                          }
-                        >
-                          {status.isLive ? "Live now" : status.text}
-                        </span>
-
-                            {/* Video_Call===========================================
-                            ========================================================= */}
-                        {connection && user && (
-                          <VideoCall
-                            myId={user.uid}
-                            friendId={friendId}
-                            friendName={friendName}
+                  return (
+                    <div
+                      key={friend.uid}
+                      className="flex gap-3 mt-3 items-center"
+                    >
+                      {/* Friend Photo */}
+                      <div className="relative shrink-0">
+                        {friend.photo ? (
+                          <img
+                            className="w-14 h-14 rounded-full object-cover"
+                            src={friend.photo}
+                            alt={friend.name}
                           />
+                        ) : (
+                          <div className="w-14 h-14 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-xl">
+                            {friend.name?.charAt(0)?.toUpperCase() || "?"}
+                          </div>
                         )}
 
+                        <p className={`absolute top-0 left-10 font-bold text-3xl ${isFriendLive ? "text-green-500" : "text-gray-400"}`}>
+                          <GoDotFill />
+                        </p>
                       </div>
 
+                      {/* Friend Information */}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold truncate">{friend.name}</p>
+
+                        <small className="block truncate">
+                          {friendData?.place || "Location unavailable"}
+                        </small>
+
+                        {/* Live / Last seen status */}
+                        <div className="flex items-center gap-2 text-sm">
+                          <span className={`w-2.5 h-2.5 rounded-full ${isFriendLive ? "bg-green-500" : "bg-gray-400"}`} />
+                          <span className={isFriendLive ? "text-green-500" : "text-gray-400"}>
+                            {isFriendLive
+                              ? "Live Now"
+                              : lastUpdate > 0
+                                ? (() => {
+                                    const seconds = Math.max(0, Math.floor((currentTime - lastUpdate) / 1000));
+                                    if (seconds < 60) return "Just now";
+                                    const minutes = Math.floor(seconds / 60);
+                                    if (minutes < 60) return `${minutes} minute${minutes === 1 ? "" : "s"} ago`;
+                                    const hours = Math.floor(minutes / 60);
+                                    if (hours < 24) return `${hours} hour${hours === 1 ? "" : "s"} ago`;
+                                    const days = Math.floor(hours / 24);
+                                    return `${days} day${days === 1 ? "" : "s"} ago`;
+                                  })()
+                                : "Offline"}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Video Call */}
+                      {user && (
+                        <VideoCall
+                          myId={user.uid}
+                          friendId={friend.uid}
+                          friendName={friend.name}
+                        />
+                      )}
                     </div>
-
-                  </div>
-
-                )}
-
-                
-
+                  );
+                })}
               </article>
 
-              
 
 
               {/* invite Pepole,,,,,,,,,,,, */}
@@ -1146,23 +1175,11 @@ const Live = () => {
                 <Map
                   myPhoto={user?.photoURL}
                   myName={user?.displayName}
-
-                  friendLocation={friendLocation}
-
-                  friendPhoto={
-                    connection?.user1Uid === user?.uid
-                      ? connection?.user2Photo
-                      : connection?.user1Photo
-                  }
-
-                  friendName={
-                    connection?.user1Uid === user?.uid
-                      ? connection?.user2Name
-                      : connection?.user1Name
-                  }
+                  friendLocations={friendLocations}
+                  flyToLocation={flyToLocation}
                 />
 
-                
+
 
               </div>
 
